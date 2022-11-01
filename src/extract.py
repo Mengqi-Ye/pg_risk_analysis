@@ -1,18 +1,37 @@
-import geopandas
-import pandas
+import geopandas as gpd
+import pandas as pd
 from osgeo import ogr,gdal
 import os
-import numpy 
+import xarray as xr
+import rasterio
+import numpy as np
+import pyproj
 from pygeos import from_wkb,from_wkt
+import pygeos
 from tqdm import tqdm
 from shapely.wkb import loads
 from pathlib import Path
+import glob
+from shapely.geometry import mapping
+pd.options.mode.chained_assignment = None
+from rasterio.mask import mask
+#import rioxarray
 
+# load from other py files within pg_risk_analysis
+from utils import reproject,buffer_assets
 
-code_path = (Path(__file__).parent.absolute())
+gdal.SetConfigOption("OSM_CONFIG_FILE", os.path.join('..',"osmconf.ini"))
 
-gdal.SetConfigOption("OSM_CONFIG_FILE", os.path.join(code_path,'..',"osmconf.ini"))
+# change paths to make it work on your own machine
+data_path = os.path.join('C:\\','data','pg_risk_analysis')
+tc_path = os.path.join(data_path,'tc_netcdf')
+fl_path = os.path.join(data_path,'GLOFRIS')
+osm_data_path = os.path.join('C:\\','data','country_osm')
+pg_data_path = os.path.join(data_path,'pg_data')
 
+##### ##### ##### ##### ##### ##### ##### ##### ##### 
+##### ##### ##### Extract OSM data  ##### ##### ##### 
+##### ##### ##### ##### ##### ##### ##### ##### ##### 
 
 def query_b(geoType,keyCol,**valConstraint):
     """
@@ -60,10 +79,12 @@ def retrieve(osm_path,geoType,keyCol,**valConstraint):
     cl = ['osm_id'] 
     for a in keyCol: cl.append(a)
     if data is not None:
-        print('query is finished, lets start the loop')
+        print('OSM query is finished: create Dataframe with assets:')
         for feature in tqdm(sql_lyr,desc='extract'):
             #try:
             if feature.GetField(keyCol[0]) is not None:
+                geom1 = (feature.geometry().ExportToWkt())
+                #print(geom1)
                 geom = from_wkt(feature.geometry().ExportToWkt()) 
                 if geom is None:
                     continue
@@ -78,10 +99,10 @@ def retrieve(osm_path,geoType,keyCol,**valConstraint):
         print("ERROR: Nonetype error when requesting SQL. Check required.")    
     cl.append('geometry')                   
     if len(features) > 0:
-        return pandas.DataFrame(features,columns=cl)
+        return pd.DataFrame(features,columns=cl)
     else:
         print("WARNING: No features or No Memory. returning empty GeoDataFrame") 
-        return pandas.DataFrame(columns=['osm_id','geometry'])
+        return pd.DataFrame(columns=['osm_id','geometry'])
 
 def power_polyline(osm_path):
     """
@@ -91,29 +112,37 @@ def power_polyline(osm_path):
         for which we want to do the analysis.        
     Returns:
         *GeoDataFrame* : a geopandas GeoDataFrame with specified unique energy linestrings.
-    """   
-    return retrieve(osm_path,'lines',['power', 'voltage']) 
+    """
+    df = retrieve(osm_path,'lines',['power','voltage'])
+    
+    df = df.reset_index(drop=True).rename(columns={'power': 'asset'})
+    
+    #print(df) #check infra keys
+    
+    return df.reset_index(drop=True)
 
 def power_polygon(osm_path):
     """
-    Function to extract energy polygons from OpenStreetMap  
+    Function to extract building polygons from OpenStreetMap    
     Arguments:
         *osm_path* : file path to the .osm.pbf file of the region 
         for which we want to do the analysis.        
     Returns:
-        *GeoDataFrame* : a geopandas GeoDataFrame with specified unique energy linestrings.
-    """   
-    df = retrieve(osm_path,'multipolygons',['other_tags']) 
+        *GeoDataFrame* : a geopandas GeoDataFrame with all unique building polygons.    
+    """
+    df = retrieve(osm_path,'multipolygons',['power'])
     
-    df = df.loc[(df.other_tags.str.contains('power'))]   #keep rows containing power data         
-    df = df.reset_index(drop=True).rename(columns={'other_tags': 'asset'})     
+    df = df.reset_index(drop=True).rename(columns={'power': 'asset'})
     
+    #df = df[df.asset!='generator']
     df['asset'].loc[df['asset'].str.contains('"power"=>"substation"', case=False)]  = 'substation' #specify row
     df['asset'].loc[df['asset'].str.contains('"power"=>"plant"', case=False)] = 'plant' #specify row
     
+    #print(df)  #check infra keys
+    
     df = df.loc[(df.asset == 'substation') | (df.asset == 'plant')]
-            
-    return df.reset_index(drop=True) 
+    
+    return df.reset_index(drop=True)
 
 def power_point(osm_path):
     """
@@ -125,13 +154,79 @@ def power_point(osm_path):
         *GeoDataFrame* : a geopandas GeoDataFrame with specified unique energy linestrings.
     """   
     df = retrieve(osm_path,'points',['other_tags']) 
-    
     df = df.loc[(df.other_tags.str.contains('power'))]  #keep rows containing power data       
     df = df.reset_index(drop=True).rename(columns={'other_tags': 'asset'})     
     
+    #print(df)
+    
     df['asset'].loc[df['asset'].str.contains('"power"=>"tower"', case=False)]  = 'power_tower' #specify row
     df['asset'].loc[df['asset'].str.contains('"power"=>"pole"', case=False)] = 'power_pole' #specify row
+    #df['asset'].loc[df['asset'].str.contains('"utility"=>"power"', case=False)] = 'power_tower' #specify row
     
     df = df.loc[(df.asset == 'power_tower') | (df.asset == 'power_pole')]
             
-    return df.reset_index(drop=True)   
+    return df.reset_index(drop=True)
+
+def extract_osm_infrastructure(country_code,osm_data_path):
+    """_summary_
+
+    Args:
+        country_code (_type_): _description_
+        osm_data_path (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    # lines
+    osm_path = os.path.join(osm_data_path,'{}.osm.pbf'.format(country_code))
+    power_lines_country = power_polyline(osm_path)
+    power_lines_country['geometry'] = reproject(power_lines_country)
+    power_lines_country = buffer_assets(power_lines_country.loc[power_lines_country.asset.isin(
+        ['cable','minor_cable','line','minor_line'])],buffer_size=100).reset_index(drop=True)
+    
+    # polygons
+    osm_path = os.path.join(osm_data_path,'{}.osm.pbf'.format(country_code))
+    power_poly_country = power_polygon(osm_path)
+    power_poly_country['geometry'] = reproject(power_poly_country)
+    
+    # points
+    osm_path = os.path.join(osm_data_path,'{}.osm.pbf'.format(country_code))
+    power_points_country = power_point(osm_path)
+    power_points_country['geometry'] = reproject(power_points_country)
+    power_points_country = buffer_assets(power_points_country.loc[power_points_country.asset.isin(
+        ['power_tower','power_pole'])],buffer_size=100).reset_index(drop=True)
+
+    return power_lines_country,power_poly_country,power_points_country
+
+##### ##### ##### ##### ##### ##### ##### ##### ##### 
+##### ##### ##### Extract Gov data  ##### ##### ##### 
+##### ##### ##### ##### ##### ##### ##### ##### ##### 
+
+def extract_pg_data(country_code,pg_type):
+    """_summary_
+
+    Args:
+        country_code (_type_): _description_
+        pg_type (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    pg_path = os.path.join(pg_data_path,'{}_{}.gpkg'.format(country_code,pg_type)) #e.g.,LAO_line
+    pg_data_country = gpd.read_file(os.path.join(pg_path))
+    
+    pg_data_country = pd.DataFrame(pg_data_country.copy())
+    #print(pg_data_country.head())
+    pg_data_country.geometry = pygeos.from_shapely(pg_data_country.geometry)
+    pg_data_country['geometry'] = reproject(pg_data_country)
+    
+    if pg_type == 'line':
+        pg_data_country = buffer_assets(pg_data_country.loc[pg_data_country.asset.isin(['line'])],buffer_size=100).reset_index(drop=True)
+        return pg_data_country
+    
+    elif pg_type == 'point':
+        pg_data_country = buffer_assets(pg_data_country.loc[pg_data_country.asset.isin(['point'])],buffer_size=100).reset_index(drop=True)
+        return pg_data_country
+
+    else:
+        return pg_data_country
