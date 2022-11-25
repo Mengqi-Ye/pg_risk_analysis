@@ -33,3 +33,20 @@ def buffer_assets(assets,buffer_size=100):
     """    
     assets['buffered'] = pygeos.buffer(assets.geometry.values,buffer_size)
     return assets
+
+def overlay_hazard_assets(df_ds,assets):
+    """[summary]
+
+    Args:
+        df_ds ([type]): [description]
+        assets ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
+    #overlay 
+    hazard_tree = pygeos.STRtree(df_ds.geometry.values)
+    if (pygeos.get_type_id(assets.iloc[0].geometry) == 3) | (pygeos.get_type_id(assets.iloc[0].geometry) == 6):
+        return  hazard_tree.query_bulk(assets.geometry,predicate='intersects')    
+    else:
+        return  hazard_tree.query_bulk(assets.buffered,predicate='intersects')

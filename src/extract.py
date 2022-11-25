@@ -75,8 +75,8 @@ def retrieve(osm_path,geoType,keyCol,**valConstraint):
     query = query_b(geoType,keyCol,**valConstraint)
     sql_lyr = data.ExecuteSQL(query)
     features =[]
-    # cl = columns 
-    cl = ['osm_id'] 
+    
+    cl = ['osm_id']
     for a in keyCol: cl.append(a)
     if data is not None:
         print('OSM query is finished: create Dataframe with assets:')
@@ -93,8 +93,6 @@ def retrieve(osm_path,geoType,keyCol,**valConstraint):
                 for i in cl: field.append(feature.GetField(i))
                 field.append(geom)   
                 features.append(field)
-            #except:
-            #    print("WARNING: skipped OSM feature")   
     else:
         print("ERROR: Nonetype error when requesting SQL. Check required.")    
     cl.append('geometry')                   
@@ -116,8 +114,6 @@ def power_polyline(osm_path):
     df = retrieve(osm_path,'lines',['power','voltage'])
     
     df = df.reset_index(drop=True).rename(columns={'power': 'asset'})
-    
-    #print(df) #check infra keys
     
     return df.reset_index(drop=True)
 
@@ -157,11 +153,8 @@ def power_point(osm_path):
     df = df.loc[(df.other_tags.str.contains('power'))]  #keep rows containing power data       
     df = df.reset_index(drop=True).rename(columns={'other_tags': 'asset'})     
     
-    #print(df)
-    
     df['asset'].loc[df['asset'].str.contains('"power"=>"tower"', case=False)]  = 'power_tower' #specify row
     df['asset'].loc[df['asset'].str.contains('"power"=>"pole"', case=False)] = 'power_pole' #specify row
-    #df['asset'].loc[df['asset'].str.contains('"utility"=>"power"', case=False)] = 'power_tower' #specify row
     
     df = df.loc[(df.asset == 'power_tower') | (df.asset == 'power_pole')]
             
@@ -198,6 +191,7 @@ def extract_osm_infrastructure(country_code,osm_data_path):
 
     return power_lines_country,power_poly_country,power_points_country
 
+
 ##### ##### ##### ##### ##### ##### ##### ##### ##### 
 ##### ##### ##### Extract Gov data  ##### ##### ##### 
 ##### ##### ##### ##### ##### ##### ##### ##### ##### 
@@ -212,21 +206,34 @@ def extract_pg_data(country_code,pg_type):
     Returns:
         _type_: _description_
     """
-    pg_path = os.path.join(pg_data_path,'{}_{}.gpkg'.format(country_code,pg_type)) #e.g.,LAO_line
-    pg_data_country = gpd.read_file(os.path.join(pg_path))
+    files = [x for x in os.listdir(pg_data_path)  if country_code in x ]
     
-    pg_data_country = pd.DataFrame(pg_data_country.copy())
-    #print(pg_data_country.head())
-    pg_data_country.geometry = pygeos.from_shapely(pg_data_country.geometry)
-    pg_data_country['geometry'] = reproject(pg_data_country)
-    
-    if pg_type == 'line':
-        pg_data_country = buffer_assets(pg_data_country.loc[pg_data_country.asset.isin(['line'])],buffer_size=100).reset_index(drop=True)
-        return pg_data_country
-    
-    elif pg_type == 'point':
-        pg_data_country = buffer_assets(pg_data_country.loc[pg_data_country.asset.isin(['point'])],buffer_size=100).reset_index(drop=True)
-        return pg_data_country
+    if pg_type=='line':
+        for file in files: 
+            file_path = os.path.join(pg_data_path,'{}_{}.gpkg'.format(country_code,pg_type))
 
-    else:
-        return pg_data_country
+            pg_data_country = gpd.read_file(file_path)
+            pg_data_country = pd.DataFrame(pg_data_country.copy())
+            pg_data_country.geometry = pygeos.from_shapely(pg_data_country.geometry)
+            pg_data_country['geometry'] = reproject(pg_data_country)
+
+        pg_data_country = buffer_assets(pg_data_country.loc[pg_data_country.asset.isin(['line'])],buffer_size=100).reset_index(drop=True)
+
+    elif pg_type=='point':
+        for file in files:
+            file_path = os.path.join(pg_data_path,'{}_{}.gpkg'.format(country_code,pg_type))
+                
+            pg_data_country = gpd.read_file(file_path)
+            pg_data_country = pd.DataFrame(pg_data_country.copy())
+            pg_data_country.geometry = pygeos.from_shapely(pg_data_country.geometry)
+            pg_data_country['geometry'] = reproject(pg_data_country)
+
+        pg_data_country = buffer_assets(pg_data_country.loc[pg_data_country.asset.isin(['plant_point','substation_point','power_tower','power_pole'])],buffer_size=100).reset_index(drop=True)
+
+    return pg_data_country
+
+def open_pg_data(country_code):
+    pg_lines = extract_pg_data(country_code,'line')
+    pg_points = extract_pg_data(country_code,'point')
+    
+    return pg_lines,pg_points
