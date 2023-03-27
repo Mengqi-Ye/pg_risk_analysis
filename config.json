@@ -1,0 +1,14 @@
+
+{
+    "comment": "Copy this file to `config.json` and edit for your local setup. `data` is the path to the directory of input data, as provided - e.g. `~/data// Incoming Data/`. `hazard_data` is the path to the directory of the hazard data, `figures` is the path to output figures.",
+    "paths": {
+        "data_path": "C:\\data\\pg_risk_analysis"
+        "tc_path": "C:\\data\\pg_risk_analysis\\tc_netcdf"
+        "fl_path": "C:\\data\\pg_risk_analysis\\GLOFRIS)
+        "osm_data_path": "C:\\data\\country_osm"
+        "pg_data_path": "C:\\data\\pg_risk_analysis\\pg_data"
+        "vul_curve_path": "C:\\data\\pg_risk_analysis\\vulnerability_curves"
+
+		"figures" : "C:\\data\\pg_risk_analysis\\figures"
+		}
+}

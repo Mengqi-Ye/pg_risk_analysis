@@ -1,6 +1,16 @@
+import os
 import pygeos
 import pyproj
 import numpy as np
+import json
+
+def load_config():
+    """Read config.json
+    """
+    config_path = os.path.join(os.path.dirname(__file__), '..', 'config.json')
+    with open(config_path, 'r') as config_fh:
+    config = json.load(config_fh)
+    return config
 
 def reproject(df_ds,current_crs="epsg:4326",approximate_crs = "epsg:3857"):
     """[summary]
@@ -50,3 +60,12 @@ def overlay_hazard_assets(df_ds,assets):
         return  hazard_tree.query_bulk(assets.geometry,predicate='intersects')    
     else:
         return  hazard_tree.query_bulk(assets.buffered,predicate='intersects')
+    
+    
+def load_config():
+    """Read config.json
+    """
+    config_path = os.path.join(os.path.dirname(__file__), '..', 'config.json')
+    with open(config_path, 'r') as config_fh:
+        config = json.load(config_fh)
+    return config

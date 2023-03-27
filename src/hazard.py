@@ -60,48 +60,11 @@ def load_storm_data(climate_model,basin):
         df_ds['geometry'] = reproject(df_ds)
             
         # drop all non values to reduce size
-        df_ds = df_ds.loc[~df_ds['1_10000{}'.format(climate_model)].isna()].reset_index(drop=True)
+        df_ds = df_ds.loc[~df_ds['1_1000{}'.format(climate_model)].isna()].reset_index(drop=True)
         df_ds = df_ds.fillna(0)
         df_ds = df_ds[['1_{}{}'.format(int(x),climate_model) for x in [10,50,100,500,1000]]+['geometry']]
 
     return df_ds
-
-def clip_strom_data(country_code):
-    """_summary_
-
-    Returns:
-        _type_: _description_
-    """ 
-    # load country geometry file and create geometry to clip
-    ne_countries = gpd.read_file('C:\\Data\\natural_earth\\ne_10m_admin_0_countries.shp') 
-    geometry = ne_countries.loc[ne_countries['ISO_A3']==country_code].geometry.values[0]
-    geoms = [mapping(geometry)]
-    
-    rps = ['0010','0050','0100','0500','1000']
-    climate_models = ['historical','rcp8p5']
-    
-    for rp in rps:
-        for climate_model in climate_models:
-            if climate_model=='historical':
-                input_file = os.path.join(fl_path,'global',
-                                          'inuncoast_{}_nosub_hist_rp{}_0.tif'.format(climate_model,rp)) 
-            elif climate_model=='rcp8p5':
-                        input_file = os.path.join(fl_path,'global',
-                                                  'inuncoast_{}_nosub_2030_rp{}_0.tif'.format(climate_model,rp))
-            # load raster file and save clipped version
-            with rasterio.open(input_file) as src:
-                out_image, out_transform = mask(src, geoms, crop=True)
-                out_meta = src.meta
-
-                out_meta.update({"driver": "GTiff",
-                         "height": out_image.shape[1],
-                         "width": out_image.shape[2],
-                         "transform": out_transform})
-
-                file_path = os.path.join(fl_path,'country','_'.join([country_code]+input_file.split('_')[3:]))
-
-                with rasterio.open(file_path, "w", **out_meta) as dest:
-                    dest.write(out_image)
 
 
 def open_storm_data():
