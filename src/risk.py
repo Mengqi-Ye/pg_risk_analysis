@@ -17,8 +17,9 @@ pd.options.mode.chained_assignment = None
 from rasterio.mask import mask
 
 # load from other py files within pg_risk_analysis
-from extract import open_pg_data
-from damage import assess_damage_pg
+from extract import extract_osm_infrastructure,open_pg_data
+from hazard import clip_flood_data
+from damage import assess_damage_osm,assess_damage_pg
 
 gdal.SetConfigOption("OSM_CONFIG_FILE", os.path.join('..',"osmconf.ini"))
 
@@ -28,8 +29,29 @@ tc_path = os.path.join(data_path,'tc_netcdf')
 fl_path = os.path.join(data_path,'GLOFRIS')
 osm_data_path = os.path.join('C:\\','data','country_osm')
 pg_data_path = os.path.join(data_path,'pg_data')
-vul_curve_path = os.path.join(data_path,'vulnerability_curves')
+vul_curve_path = os.path.join(data_path,'vulnerability_curves','input_vulnerability_data.xlsx')
 
+def country_analysis_osm(country_code,hazard_type):
+    """_summary_
+
+    Args:
+        country_code (_type_): _description_
+        hazard_type (str, optional): _description_. Defaults to 'OSM'.
+
+    Returns:
+        _type_: _description_
+    """    
+    # extract infrastructure data from OSM
+    osm_power_infra = extract_osm_infrastructure(country_code,osm_data_path)
+
+    if hazard_type == 'fl':
+        # extract flood hazard data
+        clip_flood_data(country_code)
+
+    # assess damage
+    osm_damage_infra = assess_damage_osm(country_code,osm_power_infra,hazard_type)
+
+    return osm_damage_infra
 
 def country_analysis_pg(country_code,hazard_type): #
     """_summary_
@@ -52,4 +74,4 @@ def country_analysis_pg(country_code,hazard_type): #
 
 if __name__ == "__main__":
     
-    pg_damage_infra = country_analysis_pg(sys.argv[1],sys.argv[2]) #country_code, hazard_type
+    osm_damage_infra = country_analysis_osm(sys.argv[1],sys.argv[2]) #country_code, hazard_type

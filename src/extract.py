@@ -15,7 +15,11 @@ import glob
 from shapely.geometry import mapping
 pd.options.mode.chained_assignment = None
 from rasterio.mask import mask
-#import rioxarray
+import rioxarray
+import matplotlib.pyplot as plt
+
+import warnings
+warnings.filterwarnings("ignore")
 
 # load from other py files within pg_risk_analysis
 from utils import reproject,buffer_assets
@@ -23,11 +27,13 @@ from utils import reproject,buffer_assets
 gdal.SetConfigOption("OSM_CONFIG_FILE", os.path.join('..',"osmconf.ini"))
 
 # change paths to make it work on your own machine
-data_path = os.path.join('C:\\','data','pg_risk_analysis')
+data_path = os.path.join('C:\\','Data','pg_risk_analysis')
 tc_path = os.path.join(data_path,'tc_netcdf')
 fl_path = os.path.join(data_path,'GLOFRIS')
-osm_data_path = os.path.join('C:\\','data','country_osm')
+osm_data_path = os.path.join('C:\\','Data','country_osm')
 pg_data_path = os.path.join(data_path,'pg_data')
+vul_curve_path = os.path.join(data_path,'vulnerability_curves','input_vulnerability_data.xlsx')
+output_path = os.path.join('C:\\','projects','pg_risk_analysis','output')
 
 ##### ##### ##### ##### ##### ##### ##### ##### ##### 
 ##### ##### ##### Extract OSM data  ##### ##### ##### 
@@ -75,11 +81,11 @@ def retrieve(osm_path,geoType,keyCol,**valConstraint):
     query = query_b(geoType,keyCol,**valConstraint)
     sql_lyr = data.ExecuteSQL(query)
     features =[]
-    
-    cl = ['osm_id']
+    # cl = columns 
+    cl = ['osm_id'] 
     for a in keyCol: cl.append(a)
     if data is not None:
-        print('OSM query is finished: create Dataframe with assets:')
+        print('query is finished, lets start the loop')
         for feature in tqdm(sql_lyr,desc='extract'):
             #try:
             if feature.GetField(keyCol[0]) is not None:
@@ -93,6 +99,8 @@ def retrieve(osm_path,geoType,keyCol,**valConstraint):
                 for i in cl: field.append(feature.GetField(i))
                 field.append(geom)   
                 features.append(field)
+            #except:
+            #    print("WARNING: skipped OSM feature")   
     else:
         print("ERROR: Nonetype error when requesting SQL. Check required.")    
     cl.append('geometry')                   
@@ -115,9 +123,32 @@ def power_polyline(osm_path):
     
     df = df.reset_index(drop=True).rename(columns={'power': 'asset'})
     
+    #print(df) #check infra keys
+    
     return df.reset_index(drop=True)
 
-def power_polygon(osm_path):
+def power_polygon(osm_path): # check with joel, something was wrong here with extracting substations
+    """
+    Function to extract energy polygons from OpenStreetMap  
+    Arguments:
+        *osm_path* : file path to the .osm.pbf file of the region 
+        for which we want to do the analysis.        
+    Returns:
+        *GeoDataFrame* : a geopandas GeoDataFrame with specified unique energy linestrings.
+    """
+    df = retrieve(osm_path,'multipolygons',['other_tags']) 
+    
+    df = df.loc[(df.other_tags.str.contains('power'))]   #keep rows containing power data         
+    df = df.reset_index(drop=True).rename(columns={'other_tags': 'asset'})     
+    
+    df['asset'].loc[df['asset'].str.contains('"power"=>"substation"', case=False)]  = 'substation' #specify row
+    df['asset'].loc[df['asset'].str.contains('"power"=>"plant"', case=False)] = 'plant' #specify row
+    
+    df = df.loc[(df.asset == 'substation') | (df.asset == 'plant')]
+            
+    return df.reset_index(drop=True) 
+
+def electricity(osm_path):
     """
     Function to extract building polygons from OpenStreetMap    
     Arguments:
@@ -140,6 +171,26 @@ def power_polygon(osm_path):
     
     return df.reset_index(drop=True)
 
+def retrieve_poly_subs(osm_path, w_list, b_list):
+    """
+    Function to extract electricity substation polygons from OpenStreetMap
+    Arguments:
+        *osm_path* : file path to the .osm.pbf file of the region
+        for which we want to do the analysis.
+        *w_list* :  white list of keywords to search in the other_tags columns
+        *b_list* :  black list of keywords of rows that should not be selected
+    Returns:
+        *GeoDataFrame* : a geopandas GeoDataFrame with specified unique substation.
+    """
+    df = retrieve(osm_path,'multipolygons',['other_tags'])
+    df = df[df.other_tags.str.contains('substation', case=False, na=False)]
+    #df = df.loc[(df.other_tags.str.contains('substation'))]
+    df = df[~df.other_tags.str.contains('|'.join(b_list))]
+    #df = df.reset_index(drop=True).rename(columns={'other_tags': 'asset'})
+    df['asset']  = 'substation' #specify row
+    #df = df.loc[(df.asset == 'substation')] #specify row
+    return df.reset_index(drop=True)
+
 def power_point(osm_path):
     """
     Function to extract energy points from OpenStreetMap  
@@ -152,9 +203,10 @@ def power_point(osm_path):
     df = retrieve(osm_path,'points',['other_tags']) 
     df = df.loc[(df.other_tags.str.contains('power'))]  #keep rows containing power data       
     df = df.reset_index(drop=True).rename(columns={'other_tags': 'asset'})     
-    
+        
     df['asset'].loc[df['asset'].str.contains('"power"=>"tower"', case=False)]  = 'power_tower' #specify row
     df['asset'].loc[df['asset'].str.contains('"power"=>"pole"', case=False)] = 'power_pole' #specify row
+    #df['asset'].loc[df['asset'].str.contains('"utility"=>"power"', case=False)] = 'power_tower' #specify row
     
     df = df.loc[(df.asset == 'power_tower') | (df.asset == 'power_pole')]
             
