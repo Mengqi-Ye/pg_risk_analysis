@@ -162,11 +162,6 @@ def load_storm_data(climate_model,basin,bbox):
 ##### ##### ##### ##### ##### ##### ##### #####     
 
 def clip_flood_data(country_code):
-    """Clip flood data to country boundary
-
-    Args:
-        country_code (string): ISO 3 letter country code
-    """
 
     # load country geometry file and create geometry to clip
     ne_countries = gpd.read_file('C:\\Data\\natural_earth\\ne_10m_admin_0_countries.shp') 
@@ -177,7 +172,7 @@ def clip_flood_data(country_code):
     rps = ['0001','0002','0005','0010','0025','0050','0100','0250','0500','1000']
     climate_models = ['historical','rcp8p5']
     
-
+    
     for rp in rps:
         #global input_file
         for climate_model in climate_models:
@@ -185,18 +180,22 @@ def clip_flood_data(country_code):
                 #f rps=='0001':
                     input_file = os.path.join(fl_path,'global',
                                               'inuncoast_{}_nosub_hist_rp{}_0.tif'.format(climate_model,rp)) 
-
+                #elif rps==['0002','0005','0010','0025','0050','0100','0250','0500','1000']:
+                #    input_file = os.path.join(fl_path,'global',
+                #                              'inuncoast_{}_nosub_hist_rp{}_0.tif'.format(climate_model,rp)) 
             elif climate_model=='rcp8p5':
                 #f rps=='0001':
                     input_file = os.path.join(fl_path,'global',
                                               'inuncoast_{}_nosub_2030_rp{}_0.tif'.format(climate_model,rp))
-
+                #elif rps==['0002','0005','0010','0025','0050','0100','0250','0500','1000']:
+                #    input_file = os.path.join(fl_path,'global',
+                #                              'inuncoast_{}_nosub_2030_rp{}_0.tif'.format(climate_model,rp))
+            
             # load raster file and save clipped version
             with rasterio.open(input_file) as src:
                 out_image, out_transform = mask(src, geoms, crop=True)
                 out_meta = src.meta
 
-                # save the resulting raster
                 out_meta.update({"driver": "GTiff",
                          "height": out_image.shape[1],
                          "width": out_image.shape[2],
@@ -208,16 +207,8 @@ def clip_flood_data(country_code):
                     dest.write(out_image)
 
 def load_flood_data(country_code,scenario_type):
-    """Load flood data for country
-
-    Args:
-        country_code (string): ISO 3 letter country code
-        scenario_type (string): historical or rcp8p5
-
-    Returns:
-        [type]: [description]
-    """
-        
+    files = [x for x in os.listdir(os.path.join(fl_path,'country'))  if country_code in x ]
+    
     rps = ['0001','0002','0005','0010','0025','0050','0100','0250','0500','1000']
     collect_df_ds = []
     
@@ -230,11 +221,13 @@ def load_flood_data(country_code,scenario_type):
                 df_ds = ds.to_dataframe().reset_index()
                 df_ds['geometry'] = pygeos.points(df_ds.x,y=df_ds.y)
                 df_ds = df_ds.rename(columns={'band_data': 'rp'+rp}) #rename to return period
+                
+                # move from meters to centimeters
                 df_ds['rp'+rp] = (df_ds['rp'+rp]*100)         
                 df_ds = df_ds.drop(['band','x', 'y','spatial_ref'], axis=1)
                 df_ds = df_ds.dropna()
                 df_ds = df_ds.reset_index(drop=True)
-                df_ds.geometry= pygeos.buffer(df_ds.geometry,radius=100/2,cap_style='square').values  #?????????????????????????
+                df_ds.geometry= pygeos.buffer(df_ds.geometry,radius=0.00833/2,cap_style='square').values  #?????????????????????????
                 df_ds['geometry'] = reproject(df_ds)
                 collect_df_ds.append(df_ds)
 
@@ -255,7 +248,7 @@ def load_flood_data(country_code,scenario_type):
                 df_ds = df_ds.drop(['band','x', 'y','spatial_ref'], axis=1)
                 df_ds = df_ds.dropna()
                 df_ds = df_ds.reset_index(drop=True)
-                df_ds.geometry= pygeos.buffer(df_ds.geometry,radius=100/2,cap_style='square').values
+                df_ds.geometry= pygeos.buffer(df_ds.geometry,radius=0.00833/2,cap_style='square').values
                 df_ds['geometry'] = reproject(df_ds)
                 collect_df_ds.append(df_ds)
 

@@ -75,3 +75,5 @@ def country_analysis_pg(country_code,hazard_type): #
 if __name__ == "__main__":
     
     osm_damage_infra = country_analysis_osm(sys.argv[1],sys.argv[2]) #country_code, hazard_type
+
+    ### ADD CODE TO SAVE RESULTS TO FILE HERE ###

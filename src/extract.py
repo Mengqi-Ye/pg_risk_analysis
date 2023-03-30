@@ -231,7 +231,7 @@ def extract_osm_infrastructure(country_code,osm_data_path):
     
     # polygons
     osm_path = os.path.join(osm_data_path,'{}.osm.pbf'.format(country_code))
-    power_poly_country = power_polygon(osm_path)
+    power_poly_country = electricity(osm_path)
     power_poly_country['geometry'] = reproject(power_poly_country)
     
     # points
@@ -240,6 +240,7 @@ def extract_osm_infrastructure(country_code,osm_data_path):
     power_points_country['geometry'] = reproject(power_points_country)
     power_points_country = buffer_assets(power_points_country.loc[power_points_country.asset.isin(
         ['power_tower','power_pole'])],buffer_size=100).reset_index(drop=True)
+
 
     return power_lines_country,power_poly_country,power_points_country
 
