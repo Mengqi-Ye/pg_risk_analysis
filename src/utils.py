@@ -1,6 +1,30 @@
+import os
 import pygeos
 import pyproj
 import numpy as np
+
+def set_paths(local=True):
+
+    if local == True:
+        data_path = os.path.join('C:\\','Data','pg_risk_analysis')
+        tc_path = os.path.join(data_path,'tc_netcdf')
+        fl_path = os.path.join(data_path,'GLOFRIS')
+        osm_data_path = os.path.join('C:\\','Data','country_osm')
+        pg_data_path = os.path.join(data_path,'pg_data')
+        vul_curve_path = os.path.join(data_path,'vulnerability_curves','input_vulnerability_data.xlsx')
+        output_path = os.path.join('C:\\','projects','pg_risk_analysis','output')
+    else:
+        base_path = "/scistor/ivm/data_catalogue/open_street_map"
+        data_path = os.path.join(base_path,'pg_risk_analysis')
+        tc_path = os.path.join(data_path,'tc_netcdf')
+        fl_path = os.path.join(data_path,'GLOFRIS')
+        osm_data_path = os.path.join(base_path,'country_osm')
+        pg_data_path = os.path.join(data_path,'pg_data')
+        vul_curve_path = os.path.join(data_path,'vulnerability_curves','input_vulnerability_data.xlsx')
+        output_path = os.path.join('C:\\','projects','pg_risk_analysis','output')
+
+    return data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path
+
 
 def reproject(df_ds, current_crs="epsg:4326", approximate_crs="epsg:3857"):
     """

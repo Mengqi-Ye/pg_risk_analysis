@@ -15,20 +15,12 @@ import glob
 from shapely.geometry import mapping
 pd.options.mode.chained_assignment = None
 from rasterio.mask import mask
-#import rioxarray
+
 
 # load from other py files within pg_risk_analysis
-from utils import reproject
+from utils import reproject,set_paths
 
 gdal.SetConfigOption("OSM_CONFIG_FILE", os.path.join('..',"osmconf.ini"))
-
-# change paths to make it work on your own machine
-data_path = os.path.join('C:\\','data','pg_risk_analysis')
-tc_path = os.path.join(data_path,'tc_netcdf')
-fl_path = os.path.join(data_path,'GLOFRIS')
-osm_data_path = os.path.join('C:\\','data','country_osm')
-pg_data_path = os.path.join(data_path,'pg_data')
-
 
 ##### ##### ##### ##### ##### ##### ##### #####  
 ##### ##### ##### STORM DATA  ##### ##### ##### 
@@ -111,6 +103,8 @@ def load_storm_data(climate_model,basin,bbox):
     Returns:
     - df_ds (pd.DataFrame): pandas DataFrame with interpolated wind speeds for different return periods and geometry column
     """
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
+
     filename = os.path.join(tc_path, f'STORM_FIXED_RETURN_PERIODS{climate_model}_{basin}.nc')
 
     # load data from NetCDF file
@@ -162,6 +156,9 @@ def load_storm_data(climate_model,basin,bbox):
 ##### ##### ##### ##### ##### ##### ##### #####     
 
 def clip_flood_data(country_code):
+
+    # set paths
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
 
     # load country geometry file and create geometry to clip
     ne_countries = gpd.read_file('C:\\Data\\natural_earth\\ne_10m_admin_0_countries.shp') 

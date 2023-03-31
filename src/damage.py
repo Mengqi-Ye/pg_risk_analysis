@@ -19,17 +19,8 @@ from rasterio.mask import mask
 
 # load from other py files within pg_risk_analysis
 from hazard import open_storm_data, open_flood_data
-from utils import overlay_hazard_assets
+from utils import overlay_hazard_assets,set_paths
 
-gdal.SetConfigOption("OSM_CONFIG_FILE", os.path.join('..',"osmconf.ini"))
-
-# change paths to make it work on your own machine
-data_path = os.path.join('C:\\','data','pg_risk_analysis')
-tc_path = os.path.join(data_path,'tc_netcdf')
-fl_path = os.path.join(data_path,'GLOFRIS')
-osm_data_path = os.path.join('C:\\','data','country_osm')
-pg_data_path = os.path.join(data_path,'pg_data')
-vul_curve_path = os.path.join(data_path,'vulnerability_curves','input_vulnerability_data.xlsx')
 
 def load_curves_maxdam(vul_curve_path,hazard_type):
     """[summary]
@@ -164,6 +155,9 @@ def get_damage_per_asset_per_rp(asset,df_ds,assets,curves,maxdam,return_period,c
 ##### ##### ##### ##### ##### ##### ##### #####  
 def assess_damage_osm(country_code,osm_power_infra,hazard_type):
     
+    # set paths
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
+
     # load curves and maxdam
     curves,maxdam = load_curves_maxdam(vul_curve_path,hazard_type)
     

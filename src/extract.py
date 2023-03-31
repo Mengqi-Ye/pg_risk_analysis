@@ -22,18 +22,9 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # load from other py files within pg_risk_analysis
-from utils import reproject,buffer_assets
+from utils import reproject,buffer_assets,set_paths
 
 gdal.SetConfigOption("OSM_CONFIG_FILE", os.path.join('..',"osmconf.ini"))
-
-# change paths to make it work on your own machine
-data_path = os.path.join('C:\\','Data','pg_risk_analysis')
-tc_path = os.path.join(data_path,'tc_netcdf')
-fl_path = os.path.join(data_path,'GLOFRIS')
-osm_data_path = os.path.join('C:\\','Data','country_osm')
-pg_data_path = os.path.join(data_path,'pg_data')
-vul_curve_path = os.path.join(data_path,'vulnerability_curves','input_vulnerability_data.xlsx')
-output_path = os.path.join('C:\\','projects','pg_risk_analysis','output')
 
 ##### ##### ##### ##### ##### ##### ##### ##### ##### 
 ##### ##### ##### Extract OSM data  ##### ##### ##### 
@@ -222,6 +213,7 @@ def extract_osm_infrastructure(country_code,osm_data_path):
     Returns:
         _type_: _description_
     """
+
     # lines
     osm_path = os.path.join(osm_data_path,'{}.osm.pbf'.format(country_code))
     power_lines_country = power_polyline(osm_path)
@@ -259,6 +251,11 @@ def extract_pg_data(country_code,pg_type):
     Returns:
         _type_: _description_
     """
+
+    # set paths
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
+
+
     files = [x for x in os.listdir(pg_data_path)  if country_code in x ]
     
     if pg_type=='line':
