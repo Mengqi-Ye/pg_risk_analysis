@@ -115,6 +115,7 @@ def get_damage_per_asset_per_rp(asset,df_ds,assets,curves,maxdam,return_period,c
                 return [return_period,asset[0],curve_name,np.sum((np.interp(get_hazard_points[return_period].values,hazard_intensity,
                                                              fragility_values))*get_hazard_points.overlay_meters*maxdam_asset)]
 
+            # 
             elif (pygeos.get_type_id(asset_geom) == 3) | (pygeos.get_type_id(asset_geom) == 6) :
                 get_hazard_points['overlay_m2'] = pygeos.area(pygeos.intersection(get_hazard_points.geometry.values,asset_geom))
                 return [return_period,asset[0],curve_name,get_hazard_points.apply(lambda x: np.interp(x[return_period], 
