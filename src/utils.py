@@ -3,7 +3,7 @@ import pygeos
 import pyproj
 import numpy as np
 
-def set_paths(local=True):
+def set_paths(local=False):
 
     if local == True:
         data_path = os.path.join('C:\\','Data','pg_risk_analysis')
