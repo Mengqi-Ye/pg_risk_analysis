@@ -1,0 +1,22 @@
+name: py310
+
+channels:
+    - conda-forge
+
+dependencies:
+        - python=3.10
+        - gdal
+        - pygeos
+        - numpy
+        - geopandas
+        - rasterio
+        - matplotlib
+        - tqdm
+        - pip
+        - jupyterlab
+        - xlrd
+        - pyproj
+        - xarray
+        - rioxarray
+   
+          
