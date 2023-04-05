@@ -179,7 +179,7 @@ def assess_damage_osm(country_code,osm_power_infra,hazard_type):
         climate_models = ['historical','rcp8p5']
         df_ds = open_flood_data(country_code) 
         
-    #calculate damaged lines in loop by climate_model
+    #calculate damaged lines/polygons/points in loop by climate_model
     damaged_lines = {}
     damaged_poly = {}
     damaged_points = {}
