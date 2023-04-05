@@ -203,12 +203,12 @@ def assess_damage_osm(country_code,osm_power_infra,hazard_type):
                           desc='polyline damage calculation for {} {} ({})'.format(country_code,hazard_type,climate_model)):
             for return_period in return_periods:
                 collect_line_damages.append(get_damage_per_asset_per_rp(asset,
-                                                                               df_ds[climate_model],
-                                                                               power_lines,
-                                                                               curves,
-                                                                               maxdam,
-                                                                               return_period,
-                                                                               country_code))
+                                                                       df_ds[climate_model],
+                                                                       power_lines,
+                                                                       curves,
+                                                                       maxdam,
+                                                                       return_period,
+                                                                       country_code))
 
         get_asset_type_line = dict(zip(power_lines.index,power_lines.asset))
 
@@ -265,12 +265,12 @@ def assess_damage_osm(country_code,osm_power_infra,hazard_type):
                           desc='point damage calculation for {} {} ({})'.format(country_code,hazard_type,climate_model)):
             for return_period in return_periods:
                 collect_point_damages.append(get_damage_per_asset_per_rp(asset,
-                                                                                        df_ds[climate_model],
-                                                                                        power_points,
-                                                                                        curves,
-                                                                                        maxdam,
-                                                                                        return_period,
-                                                                                        country_code))
+                                                                        df_ds[climate_model],
+                                                                        power_points,
+                                                                        curves,
+                                                                        maxdam,
+                                                                        return_period,
+                                                                        country_code))
 
         get_asset_type_point = dict(zip(power_points.index,power_points.asset))
 
