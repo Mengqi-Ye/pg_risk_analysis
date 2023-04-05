@@ -49,6 +49,16 @@ def country_analysis_osm(country_code,hazard_type):
 
     # assess damage
     osm_damage_infra = assess_damage_osm(country_code,osm_power_infra,hazard_type)
+    
+    if hazard_type=='tc':
+        climate_models = ['','_CMCC-CM2-VHR4','_CNRM-CM6-1-HR','_EC-Earth3P-HR','_HadGEM3-GC31-HM']
+    elif hazard_type=='fl':
+        climate_models = ['historical','rcp8p5']
+        
+    for i in range(len(osm_damage_infra)):
+        for climate_model in climate_models:
+            with pd.ExcelWriter(os.path.join(output_path,'{}_{}_damage_{}'.format(country_code,climate_model,i)+'.xlsx')) as writer:
+                osm_damage_infra[i][climate_model].to_excel(writer)
 
     return osm_damage_infra
 
