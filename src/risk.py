@@ -58,9 +58,10 @@ def country_analysis_osm(country_code,hazard_type):
     for i in range(len(osm_damage_infra)):
         for climate_model in climate_models:
             with pd.ExcelWriter(os.path.join(output_path,'{}_{}_damage_{}'.format(country_code,climate_model,i)+'.xlsx')) as writer:
-                osm_damage_infra[i][climate_model].to_excel(writer)
-
+                osm_damage_infra[i][climate_model].drop(['asset'], axis=1).to_excel(writer)
+    
     return osm_damage_infra
+
 
 def country_analysis_pg(country_code,hazard_type): #
     """_summary_
@@ -79,10 +80,3 @@ def country_analysis_pg(country_code,hazard_type): #
     pg_damage_infra = assess_damage_pg(country_code,pg_infra,hazard_type)
 
     return pg_damage_infra
-
-
-if __name__ == "__main__":
-    
-    osm_damage_infra = country_analysis_osm(sys.argv[1],sys.argv[2]) #country_code, hazard_type
-
-    ### ADD CODE TO SAVE RESULTS TO FILE HERE ###

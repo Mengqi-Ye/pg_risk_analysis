@@ -158,26 +158,6 @@ def electricity(osm_path):
     
     return df.reset_index(drop=True)
 
-def retrieve_poly_subs(osm_path, w_list, b_list):
-    """
-    Function to extract electricity substation polygons from OpenStreetMap
-    Arguments:
-        *osm_path* : file path to the .osm.pbf file of the region
-        for which we want to do the analysis.
-        *w_list* :  white list of keywords to search in the other_tags columns
-        *b_list* :  black list of keywords of rows that should not be selected
-    Returns:
-        *GeoDataFrame* : a geopandas GeoDataFrame with specified unique substation.
-    """
-    df = retrieve(osm_path,'multipolygons',['other_tags'])
-    df = df[df.other_tags.str.contains('substation', case=False, na=False)]
-    #df = df.loc[(df.other_tags.str.contains('substation'))]
-    df = df[~df.other_tags.str.contains('|'.join(b_list))]
-    #df = df.reset_index(drop=True).rename(columns={'other_tags': 'asset'})
-    df['asset']  = 'substation' #specify row
-    #df = df.loc[(df.asset == 'substation')] #specify row
-    return df.reset_index(drop=True)
-
 def power_point(osm_path):
     """
     Function to extract energy points from OpenStreetMap  
@@ -209,28 +189,27 @@ def extract_osm_infrastructure(country_code,osm_data_path):
     Returns:
         _type_: _description_
     """
-
+    
     # lines
     osm_path = os.path.join(osm_data_path,'{}.osm.pbf'.format(country_code))
-    power_lines_country = power_polyline(osm_path)
-    power_lines_country['geometry'] = reproject(power_lines_country)
-    power_lines_country = buffer_assets(power_lines_country.loc[power_lines_country.asset.isin(
+    osm_lines = power_polyline(osm_path)
+    osm_lines['geometry'] = reproject(osm_lines)
+    osm_lines = buffer_assets(osm_lines.loc[osm_lines.asset.isin(
         ['cable','minor_cable','line','minor_line'])],buffer_size=100).reset_index(drop=True)
     
     # polygons
     osm_path = os.path.join(osm_data_path,'{}.osm.pbf'.format(country_code))
-    power_poly_country = electricity(osm_path)
-    power_poly_country['geometry'] = reproject(power_poly_country)
+    osm_polygons = electricity(osm_path)
+    osm_polygons['geometry'] = reproject(osm_polygons)
     
     # points
     osm_path = os.path.join(osm_data_path,'{}.osm.pbf'.format(country_code))
-    power_points_country = power_point(osm_path)
-    power_points_country['geometry'] = reproject(power_points_country)
-    power_points_country = buffer_assets(power_points_country.loc[power_points_country.asset.isin(
+    osm_points = power_point(osm_path)
+    osm_points['geometry'] = reproject(osm_points)
+    osm_points = buffer_assets(osm_points.loc[osm_points.asset.isin(
         ['power_tower','power_pole'])],buffer_size=100).reset_index(drop=True)
-
-
-    return power_lines_country,power_poly_country,power_points_country
+    
+    return osm_lines,osm_polygons,osm_points
 
 
 ##### ##### ##### ##### ##### ##### ##### ##### ##### 
@@ -283,3 +262,8 @@ def open_pg_data(country_code):
     pg_points = extract_pg_data(country_code,'point')
     
     return pg_lines,pg_points
+
+
+if __name__ == "__main__":
+    if 
+    osm_damage_infra = country_analysis_osm(sys.argv[1],sys.argv[2]) #country_code, hazard_type
