@@ -348,7 +348,7 @@ def assess_damage_pg(country_code,pg_infra,hazard_type):
     
     if hazard_type=='tc':
         # read wind data
-        climate_models = ['','_CMCC-CM2-VHR4','_CNRM-CM6-1-HR','_EC-Earth3P-HR','_HadGEM3-GC31-HM'
+        climate_models = ['','_CMCC-CM2-VHR4','_CNRM-CM6-1-HR','_EC-Earth3P-HR','_HadGEM3-GC31-HM']
         df_ds = open_storm_data(country_code)
 
         # remove assets that will not have any damage
