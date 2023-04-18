@@ -15,6 +15,7 @@ import glob
 from shapely.geometry import mapping
 pd.options.mode.chained_assignment = None
 from rasterio.mask import mask
+from scipy import integrate
 
 # load from other py files within pg_risk_analysis
 from utils import reproject,set_paths
@@ -110,6 +111,8 @@ def country_analysis_osm(country_code,hazard_type):
 ##### ##### ##### SAVE RESULT ##### ##### ##### 
 ##### ##### ##### ##### ##### ##### ##### #####  
 def risk_output(country_code,hazard_type,infra_type):
+    # set paths
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
     
     if infra_type == 'osm':
         total_risk = pd.DataFrame(country_analysis_osm(country_code,hazard_type))

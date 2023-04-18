@@ -15,7 +15,6 @@ import glob
 from shapely.geometry import mapping
 pd.options.mode.chained_assignment = None
 from rasterio.mask import mask
-#import rioxarray
 
 # load from other py files within pg_risk_analysis
 from hazard import open_storm_data, open_flood_data
@@ -182,7 +181,7 @@ def get_damage_per_asset_per_rp(asset,df_ds,assets,curves,maxdam,return_period,c
 ##### ##### ##### ##### ##### ##### ##### #####  
 ##### ##### ##### OSM DAMAGE  ##### ##### ##### 
 ##### ##### ##### ##### ##### ##### ##### #####
-def assess_damage_osm(country_code,osm_power_infra,hazard_type):
+def assess_damage_osm(country_code,hazard_type):
     
     # set paths
     data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
@@ -329,7 +328,7 @@ def assess_damage_osm(country_code,osm_power_infra,hazard_type):
 ##### ##### ##### ##### ##### ##### ##### #####  
 ##### ##### ##### GOV DAMAGE  ##### ##### ##### 
 ##### ##### ##### ##### ##### ##### ##### #####  
-def assess_damage_pg(country_code,pg_infra,hazard_type):
+def assess_damage_pg(country_code,hazard_type):
     """_summary_
 
     Args:
