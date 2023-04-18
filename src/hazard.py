@@ -265,6 +265,9 @@ def load_flood_data(country_code,climate_model):
     return df_all
 
 def open_flood_data(country_code):
+    
+    clip_flood_data(country_code)
+    
     climate_models = ['historical','rcp8p5']
     df_ds = {}
     for climate_model in climate_models:

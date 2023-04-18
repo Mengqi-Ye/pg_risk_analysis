@@ -182,7 +182,6 @@ def get_damage_per_asset_per_rp(asset,df_ds,assets,curves,maxdam,return_period,c
 ##### ##### ##### OSM DAMAGE  ##### ##### ##### 
 ##### ##### ##### ##### ##### ##### ##### #####  
 def assess_damage_osm(country_code,osm_power_infra,hazard_type):
-    
     # set paths
     data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
     
@@ -291,8 +290,8 @@ def assess_damage_osm(country_code,osm_power_infra,hazard_type):
         overlay_points = pd.DataFrame(overlay_hazard_assets(df_ds[climate_model],power_points).T,
                                       columns=['asset','hazard_point'])
         
-        if len(overlay_lines) == 0:
-            damaged_lines[climate_model] = pd.DataFrame()
+        if len(overlay_points) == 0:
+            damaged_points[climate_model] = pd.DataFrame()
             
         else:
             collect_point_damages = []

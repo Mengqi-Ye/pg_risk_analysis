@@ -60,14 +60,25 @@ def country_analysis_osm(country_code,hazard_type): #
     
     for i in range(len(osm_damage_infra)):
         for climate_model in climate_models:
-            if climate_model in osm_damage_infra[i]:
-                df = osm_damage_infra[i][climate_model]
+            df = osm_damage_infra[i][climate_model]
+                
+            if len(df) == 0:
+                print("No {}_{} risk of infra_type {} in {}".format(hazard_type,climate_model,i,country_code))
 
+            else:
                 with pd.ExcelWriter(os.path.join(output_path,'damage','{}_osm_{}_{}_damage_{}'.format(country_code,hazard_type,climate_model,i)+'.xlsx')) as writer:
                     df.to_excel(writer)
 
-                df['rp'] = df['rp'].replace(['rp0001','rp0002','rp0005','rp0010','rp0025','rp0050','rp0100','rp0250','rp0500','rp1000'],
-                                            [1,0.5,0.2,0.1,0.04,0.02,0.01,0.004,0.002,0.001])
+                if hazard_type == 'tc':
+                    df['rp'] = df['rp'].replace(['1_1{}'.format(climate_model),'1_2{}'.format(climate_model),'1_5{}'.format(climate_model),
+                                                 '1_10{}'.format(climate_model),'1_25{}'.format(climate_model),'1_50{}'.format(climate_model),
+                                                 '1_100{}'.format(climate_model),'1_250{}'.format(climate_model),'1_500{}'.format(climate_model),
+                                                 '1_1000{}'.format(climate_model)],
+                                                [1,0.5,0.2,0.1,0.04,0.02,0.01,0.004,0.002,0.001])
+
+                elif hazard_type == 'fl':
+                    df['rp'] = df['rp'].replace(['rp0001','rp0002','rp0005','rp0010','rp0025','rp0050','rp0100','rp0250','rp0500','rp1000'],
+                                                [1,0.5,0.2,0.1,0.04,0.02,0.01,0.004,0.002,0.001])
 
                 #assess risk for power lines
                 if i == 0:
@@ -102,11 +113,9 @@ def country_analysis_osm(country_code,hazard_type): #
                     RPS = df.loc[df['asset_type'] == 'power_pole']
                     RPS = RPS.rp.values.tolist()
                     pole_risk[climate_model] = integrate.simps(y=loss_list[::-1], x=RPS[::-1])
-            
-            else:
-                print("No risk: {} {}".format(country_code,climate_model))
                 
     return line_risk,plant_risk,substation_risk,tower_risk,pole_risk
+
 
 
 def country_analysis_pg(country_code,hazard_type): #
@@ -142,45 +151,56 @@ def country_analysis_pg(country_code,hazard_type): #
     for i in range(len(pg_damage_infra)):
         for climate_model in climate_models:
             df = pg_damage_infra[i][climate_model]
-            print(df)
             
-            with pd.ExcelWriter(os.path.join(output_path,'damage','{}_{}_pg_{}_damage_{}'.format(country_code,climate_model,hazard_type,i)+'.xlsx')) as writer:
-                df.to_excel(writer)
+            if len(df) == 0:
+                print("No {}_{} risk of infra_type {} in {}".format(hazard_type,climate_model,i,country_code))
 
-            df['rp'] = df['rp'].replace(['rp0001','rp0002','rp0005','rp0010','rp0025','rp0050','rp0100','rp0250','rp0500','rp1000'],
-                                        [1,0.5,0.2,0.1,0.04,0.02,0.01,0.004,0.002,0.001])
-            
-            #assess risk for power lines
-            if i == 0:
-                loss_list = df.meandam.values.tolist()
-                RPS = df.rp.values.tolist()
-                line_risk[climate_model] = integrate.simps(y=loss_list[::-1], x=RPS[::-1])
-            
-            #assess risk for power plants, substations, power towers and power poles
-            elif i == 1:
-                loss_list = df.loc[df['asset_type'] == 'plant']
-                loss_list = loss_list.meandam.values.tolist()
-                RPS = df.loc[df['asset_type'] == 'plant']
-                RPS = RPS.rp.values.tolist()
-                plant_risk[climate_model] = integrate.simps(y=loss_list[::-1], x=RPS[::-1])
-                
-                loss_list = df.loc[df['asset_type'] == 'substation']
-                loss_list = loss_list.meandam.values.tolist()
-                RPS = df.loc[df['asset_type'] == 'substation']
-                RPS = RPS.rp.values.tolist()
-                substation_risk[climate_model] = integrate.simps(y=loss_list[::-1], x=RPS[::-1])
-            
-                loss_list = df.loc[df['asset_type'] == 'power_tower']
-                loss_list = loss_list.meandam.values.tolist()
-                RPS = df.loc[df['asset_type'] == 'power_tower']
-                RPS = RPS.rp.values.tolist()
-                tower_risk[climate_model] = integrate.simps(y=loss_list[::-1], x=RPS[::-1])
-                
-                loss_list = df.loc[df['asset_type'] == 'power_pole']
-                loss_list = loss_list.meandam.values.tolist()
-                RPS = df.loc[df['asset_type'] == 'power_pole']
-                RPS = RPS.rp.values.tolist()
-                pole_risk[climate_model] = integrate.simps(y=loss_list[::-1], x=RPS[::-1])
+            else:
+                with pd.ExcelWriter(os.path.join(output_path,'damage','{}_{}_pg_{}_damage_{}'.format(country_code,climate_model,hazard_type,i)+'.xlsx')) as writer:
+                    df.to_excel(writer)
+
+                if hazard_type == 'tc':
+                    df['rp'] = df['rp'].replace(['1_1{}'.format(climate_model),'1_2{}'.format(climate_model),'1_5{}'.format(climate_model),
+                                                 '1_10{}'.format(climate_model),'1_25{}'.format(climate_model),'1_50{}'.format(climate_model),
+                                                 '1_100{}'.format(climate_model),'1_250{}'.format(climate_model),'1_500{}'.format(climate_model),
+                                                 '1_1000{}'.format(climate_model)],
+                                                [1,0.5,0.2,0.1,0.04,0.02,0.01,0.004,0.002,0.001])
+
+                elif hazard_type == 'fl':
+                    df['rp'] = df['rp'].replace(['rp0001','rp0002','rp0005','rp0010','rp0025','rp0050','rp0100','rp0250','rp0500','rp1000'],
+                                                [1,0.5,0.2,0.1,0.04,0.02,0.01,0.004,0.002,0.001])
+
+                #assess risk for power lines
+                if i == 0:
+                    loss_list = df.meandam.values.tolist()
+                    RPS = df.rp.values.tolist()
+                    line_risk[climate_model] = integrate.simps(y=loss_list[::-1], x=RPS[::-1])
+
+                #assess risk for power plants, substations, power towers and power poles
+                elif i == 1:
+                    loss_list = df.loc[df['asset_type'] == 'plant']
+                    loss_list = loss_list.meandam.values.tolist()
+                    RPS = df.loc[df['asset_type'] == 'plant']
+                    RPS = RPS.rp.values.tolist()
+                    plant_risk[climate_model] = integrate.simps(y=loss_list[::-1], x=RPS[::-1])
+
+                    loss_list = df.loc[df['asset_type'] == 'substation']
+                    loss_list = loss_list.meandam.values.tolist()
+                    RPS = df.loc[df['asset_type'] == 'substation']
+                    RPS = RPS.rp.values.tolist()
+                    substation_risk[climate_model] = integrate.simps(y=loss_list[::-1], x=RPS[::-1])
+
+                    loss_list = df.loc[df['asset_type'] == 'power_tower']
+                    loss_list = loss_list.meandam.values.tolist()
+                    RPS = df.loc[df['asset_type'] == 'power_tower']
+                    RPS = RPS.rp.values.tolist()
+                    tower_risk[climate_model] = integrate.simps(y=loss_list[::-1], x=RPS[::-1])
+
+                    loss_list = df.loc[df['asset_type'] == 'power_pole']
+                    loss_list = loss_list.meandam.values.tolist()
+                    RPS = df.loc[df['asset_type'] == 'power_pole']
+                    RPS = RPS.rp.values.tolist()
+                    pole_risk[climate_model] = integrate.simps(y=loss_list[::-1], x=RPS[::-1])
     
     return line_risk,plant_risk,substation_risk,tower_risk,pole_risk
 
