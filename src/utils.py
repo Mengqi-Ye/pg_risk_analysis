@@ -5,7 +5,7 @@ import numpy as np
 
 def set_paths(local=True): #set to False if run on cluster
 
-    if local == True:
+    if local == False:
         data_path = os.path.join('C:\\','Data','pg_risk_analysis')
         tc_path = os.path.join(data_path,'tc_netcdf')
         fl_path = os.path.join(data_path,'GLOFRIS')
@@ -21,7 +21,7 @@ def set_paths(local=True): #set to False if run on cluster
         osm_data_path = os.path.join(base_path,'country_osm')
         pg_data_path = os.path.join(data_path,'pg_data')
         vul_curve_path = os.path.join(data_path,'vulnerability_curves','input_vulnerability_data.xlsx')
-        output_path = os.path.join('/scistor/ivm/mye500/output/pg_risk_analysis')
+        output_path = os.path.join('/scistor/ivm/mye500/projects/pg_risk_analysis/output')
 
     return data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path
 
