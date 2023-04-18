@@ -103,7 +103,7 @@ def country_analysis_osm(country_code,hazard_type):
 ##### ##### ##### ##### ##### ##### ##### #####  
 ##### ##### #####   GOV RISK  ##### ##### ##### 
 ##### ##### ##### ##### ##### ##### ##### #####  
-def country_analysis_pg()
+#def country_analysis_pg()
 
 
 ##### ##### ##### ##### ##### ##### ##### #####  
