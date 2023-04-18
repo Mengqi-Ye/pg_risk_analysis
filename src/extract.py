@@ -114,28 +114,7 @@ def power_polyline(osm_path):
     
     return df.reset_index(drop=True)
 
-def power_polygon(osm_path): # check with joel, something was wrong here with extracting substations
-    """
-    Function to extract energy polygons from OpenStreetMap  
-    Arguments:
-        *osm_path* : file path to the .osm.pbf file of the region 
-        for which we want to do the analysis.        
-    Returns:
-        *GeoDataFrame* : a geopandas GeoDataFrame with specified unique energy linestrings.
-    """
-    df = retrieve(osm_path,'multipolygons',['other_tags']) 
-    
-    df = df.loc[(df.other_tags.str.contains('power'))]   #keep rows containing power data         
-    df = df.reset_index(drop=True).rename(columns={'other_tags': 'asset'})     
-    
-    df['asset'].loc[df['asset'].str.contains('"power"=>"substation"', case=False)]  = 'substation' #specify row
-    df['asset'].loc[df['asset'].str.contains('"power"=>"plant"', case=False)] = 'plant' #specify row
-    
-    df = df.loc[(df.asset == 'substation') | (df.asset == 'plant')]
-            
-    return df.reset_index(drop=True) 
-
-def electricity(osm_path):
+def power_polygon(osm_path):
     """
     Function to extract building polygons from OpenStreetMap    
     Arguments:
@@ -189,6 +168,8 @@ def extract_osm_infrastructure(country_code,osm_data_path):
     Returns:
         _type_: _description_
     """
+    # set paths
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
     
     # lines
     osm_path = os.path.join(osm_data_path,'{}.osm.pbf'.format(country_code))
@@ -199,7 +180,7 @@ def extract_osm_infrastructure(country_code,osm_data_path):
     
     # polygons
     osm_path = os.path.join(osm_data_path,'{}.osm.pbf'.format(country_code))
-    osm_polygons = electricity(osm_path)
+    osm_polygons = power_polygon(osm_path)
     osm_polygons['geometry'] = reproject(osm_polygons)
     
     # points
@@ -230,7 +211,6 @@ def extract_pg_data(country_code,pg_type):
     # set paths
     data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
 
-
     files = [x for x in os.listdir(pg_data_path)  if country_code in x ]
     
     if pg_type=='line':
@@ -242,7 +222,8 @@ def extract_pg_data(country_code,pg_type):
             pg_data_country.geometry = pygeos.from_shapely(pg_data_country.geometry)
             pg_data_country['geometry'] = reproject(pg_data_country)
 
-        pg_data_country = buffer_assets(pg_data_country.loc[pg_data_country.asset.isin(['line'])],buffer_size=100).reset_index(drop=True)
+        pg_data_country = buffer_assets(pg_data_country.loc[pg_data_country.asset.isin(['line'])],
+                                        buffer_size=100).reset_index(drop=True)
 
     elif pg_type=='point':
         for file in files:
@@ -262,8 +243,3 @@ def open_pg_data(country_code):
     pg_points = extract_pg_data(country_code,'point')
     
     return pg_lines,pg_points
-
-
-if __name__ == "__main__":
-    if 
-    osm_damage_infra = country_analysis_osm(sys.argv[1],sys.argv[2]) #country_code, hazard_type
