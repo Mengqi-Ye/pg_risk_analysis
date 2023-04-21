@@ -20,7 +20,6 @@ from scipy import integrate
 # load from other py files within pg_risk_analysis
 from utils import reproject,set_paths
 from extract import extract_osm_infrastructure,open_pg_data
-from hazard import clip_flood_data
 from damage import assess_damage_osm,assess_damage_pg
 
 gdal.SetConfigOption("OSM_CONFIG_FILE", os.path.join('..',"osmconf.ini"))
@@ -38,7 +37,7 @@ def country_analysis_osm(country_code,hazard_type): #
         _type_: _description_
     """    
     # set paths
-    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
     
     # extract infrastructure data from OSM
     osm_power_infra = extract_osm_infrastructure(country_code,osm_data_path)
@@ -129,7 +128,7 @@ def country_analysis_pg(country_code,hazard_type): #
         _type_: _description_
     """
     # set paths
-    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
     
     # extract infrastructure data from OSM
     pg_infra = open_pg_data(country_code)
@@ -207,7 +206,7 @@ def country_analysis_pg(country_code,hazard_type): #
 
 def risk_output(country_code,hazard_type,infra_type):
     # set paths
-    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
     
     if infra_type == 'osm':
         total_risk = pd.DataFrame(country_analysis_osm(country_code,hazard_type))

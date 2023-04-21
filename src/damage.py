@@ -42,9 +42,9 @@ def load_curves_maxdam(vul_curve_path,hazard_type):
     curves = pd.read_excel(vul_curve_path,sheet_name=sheet_name,skiprows=11,index_col=[0])
     
     if hazard_type == 'fl':
-        maxdam = pd.read_excel(vul_curve_path,sheet_name=sheet_name,index_col=[0]).iloc[:8]
+        maxdam = pd.read_excel(vul_curve_path,sheet_name=sheet_name,index_col=[0],header=[0,1]).iloc[:7]#).iloc[:8]
     elif hazard_type == 'tc':
-        maxdam = pd.read_excel(vul_curve_path,sheet_name=sheet_name,index_col=[0],header=[0,1]).iloc[:8]
+        maxdam = pd.read_excel(vul_curve_path,sheet_name=sheet_name,index_col=[0],header=[0,1]).iloc[:7]
         maxdam = maxdam.rename({'substation_point':'substation'},level=0,axis=1)
             
     curves.columns = maxdam.columns
@@ -183,7 +183,7 @@ def get_damage_per_asset_per_rp(asset,df_ds,assets,curves,maxdam,return_period,c
 ##### ##### ##### ##### ##### ##### ##### #####  
 def assess_damage_osm(country_code,osm_power_infra,hazard_type):
     # set paths
-    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
     
     # load curves and maxdam
     curves,maxdam = load_curves_maxdam(vul_curve_path,hazard_type)
@@ -336,7 +336,7 @@ def assess_damage_pg(country_code,pg_infra,hazard_type):
         _type_: _description_
     """
     # set paths
-    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
     
     # load curves and maxdam
     curves,maxdam = load_curves_maxdam(vul_curve_path,hazard_type)

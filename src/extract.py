@@ -253,7 +253,7 @@ def extract_pg_data(country_code,pg_type):
     """
 
     # set paths
-    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
     
     files = [x for x in os.listdir(pg_data_path)  if country_code in x ]
     

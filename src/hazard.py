@@ -38,7 +38,7 @@ def open_storm_data(country_code):
     - df_ds (dict): a dictionary containing STORM data for different climate models, organized by basin
     """
     # set paths
-    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
 
     # list of available climate models
     climate_models = ['','_CMCC-CM2-VHR4','_CNRM-CM6-1-HR','_EC-Earth3P-HR','_HadGEM3-GC31-HM']
@@ -105,7 +105,7 @@ def load_storm_data(climate_model,basin,bbox):
     - df_ds (pd.DataFrame): pandas DataFrame with interpolated wind speeds for different return periods and geometry column
     """
     # set paths
-    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
 
     filename = os.path.join(tc_path, f'STORM_FIXED_RETURN_PERIODS{climate_model}_{basin}.nc')
     
@@ -161,7 +161,7 @@ def load_storm_data(climate_model,basin,bbox):
 def load_flood_data(country_code,climate_model):
 
     # set paths
-    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
      
     rps = ['0001','0002','0005','0010','0025','0050','0100','0250','0500','1000']
     collect_df_ds = []

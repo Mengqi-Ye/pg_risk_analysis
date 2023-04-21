@@ -25,10 +25,10 @@ gdal.SetConfigOption("OSM_CONFIG_FILE", os.path.join('..',"osmconf.ini"))
 def clip_flood_data(country_code):
 
     # set paths
-    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
 
     # load country geometry file and create geometry to clip
-    ne_countries = gpd.read_file(os.path.join(data_path,'..',"natural_earth","ne_10m_admin_0_countries.shp"))
+    ne_countries = gpd.read_file(ne_path)
     geometry = ne_countries.loc[ne_countries['ISO_A3']==country_code].geometry.values[0]
     geoms = [mapping(geometry)]
     
