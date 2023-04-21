@@ -156,59 +156,7 @@ def load_storm_data(climate_model,basin,bbox):
 
 ##### ##### ##### ##### ##### ##### ##### #####  
 ##### ##### ##### FLOOD DATA  ##### ##### ##### 
-##### ##### ##### ##### ##### ##### ##### #####     
-
-def clip_flood_data(country_code):
-
-    # set paths
-    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
-
-    # load country geometry file and create geometry to clip
-    ne_countries = gpd.read_file(os.path.join(data_path,'..',"natural_earth","ne_10m_admin_0_countries.shp"))
-    geometry = ne_countries.loc[ne_countries['ISO_A3']==country_code].geometry.values[0]
-    geoms = [mapping(geometry)]
-    
-    #climate_model: historical, rcp4p5, rcp8p5; time_period: hist, 2030, 2050, 2080
-    rps = ['0001','0002','0005','0010','0025','0050','0100','0250','0500','1000']
-    climate_models = ['historical','rcp8p5']
-    
-    "/scistor/ivm/data_catalogue/open_street_map/pg_risk_analysis/GLOFRIS/global/inuncoast_historical_nosub_hist_rp0001_0.tif"
-
-    for rp in rps:
-        #global input_file
-        for climate_model in climate_models:
-            if climate_model=='historical':
-                #f rps=='0001':
-                    input_file = os.path.join(fl_path,'global',
-                                              'inuncoast_{}_nosub_hist_rp{}_0.tif'.format(climate_model,rp)) 
-                #elif rps==['0002','0005','0010','0025','0050','0100','0250','0500','1000']:
-                #    input_file = os.path.join(fl_path,'global',
-                #                              'inuncoast_{}_nosub_hist_rp{}_0.tif'.format(climate_model,rp)) 
-            elif climate_model=='rcp8p5':
-                #f rps=='0001':
-                    input_file = os.path.join(fl_path,'global',
-                                              'inuncoast_{}_nosub_2030_rp{}_0.tif'.format(climate_model,rp))
-                #elif rps==['0002','0005','0010','0025','0050','0100','0250','0500','1000']:
-                #    input_file = os.path.join(fl_path,'global',
-                #                              'inuncoast_{}_nosub_2030_rp{}_0.tif'.format(climate_model,rp))
-            
-            # load raster file and save clipped version
-            with rasterio.open(input_file) as src:
-                out_image, out_transform = mask(src, geoms, crop=True)
-                out_meta = src.meta
-
-                out_meta.update({"driver": "GTiff",
-                         "height": out_image.shape[1],
-                         "width": out_image.shape[2],
-                         "transform": out_transform})
-
-                if 'scistor' in fl_path:
-                    file_path = os.path.join(fl_path,'country','_'.join([country_code]+input_file.split('_')[6:]))
-                else:
-                    file_path = os.path.join(fl_path,'country','_'.join([country_code]+input_file.split('_')[3:]))
-
-                with rasterio.open(file_path, "w", **out_meta) as dest:
-                    dest.write(out_image)
+##### ##### ##### ##### ##### ##### ##### ##### 
 
 def load_flood_data(country_code,climate_model):
 
@@ -265,8 +213,6 @@ def load_flood_data(country_code,climate_model):
     return df_all
 
 def open_flood_data(country_code):
-    
-    clip_flood_data(country_code)
     
     climate_models = ['historical','rcp8p5']
     df_ds = {}

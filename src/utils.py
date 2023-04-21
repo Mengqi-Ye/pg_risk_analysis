@@ -3,7 +3,7 @@ import pygeos
 import pyproj
 import numpy as np
 
-def set_paths(local=True): #set to False if run on cluster
+def set_paths(local=False): #set to False if run on cluster
 
     if local == True:
         data_path = os.path.join('C:\\','Data','pg_risk_analysis')
