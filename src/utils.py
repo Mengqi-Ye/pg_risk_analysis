@@ -3,7 +3,7 @@ import pygeos
 import pyproj
 import numpy as np
 
-def set_paths(local=True): # set local=False if run on cluster
+def set_paths(local=False): # set local=False if run on cluster
 
     if local == True:
         data_path = os.path.join('C:\\','Data','pg_risk_analysis')
@@ -13,6 +13,7 @@ def set_paths(local=True): # set local=False if run on cluster
         pg_data_path = os.path.join(data_path,'pg_data')
         vul_curve_path = os.path.join(data_path,'vulnerability_curves','input_vulnerability_data.xlsx')
         output_path = os.path.join('C:\\','projects','pg_risk_analysis','output')
+        ne_path = os.path.join(data_path,'..',"natural_earth","ne_10m_admin_0_countries.shp")
     else:
         base_path = "/scistor/ivm/data_catalogue/open_street_map"
         data_path = os.path.join(base_path,'pg_risk_analysis')
@@ -23,8 +24,9 @@ def set_paths(local=True): # set local=False if run on cluster
         vul_curve_path = os.path.join(data_path,'vulnerability_curves','input_vulnerability_data.xlsx')
         #output_path = os.path.join('C:\\','projects','pg_risk_analysis','output')
         output_path = os.path.join("/scistor/ivm/mye500/projects/pg_risk_analysis/output")
+        ne_path = os.path.join(data_path,"natural_earth","ne_10m_admin_0_countries.shp")
 
-    return data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path
+    return data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path
 
 
 def reproject(df_ds, current_crs="epsg:4326", approximate_crs="epsg:3857"):
@@ -74,7 +76,6 @@ def buffer_assets(assets, buffer_size=100):
     assets['buffered'] = pygeos.buffer(assets.geometry.values, buffer_size)
     
     return assets
-
 
 
 def overlay_hazard_assets(df_ds, assets):

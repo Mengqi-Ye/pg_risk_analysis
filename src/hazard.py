@@ -38,7 +38,7 @@ def open_storm_data(country_code):
     - df_ds (dict): a dictionary containing STORM data for different climate models, organized by basin
     """
     # set paths
-    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
 
     # list of available climate models
     climate_models = ['','_CMCC-CM2-VHR4','_CNRM-CM6-1-HR','_EC-Earth3P-HR','_HadGEM3-GC31-HM']
@@ -64,7 +64,7 @@ def open_storm_data(country_code):
     }
 
     # load country geometry file and create geometry to clip
-    ne_countries = gpd.read_file(os.path.join(data_path,'..',"natural_earth","ne_10m_admin_0_countries.shp"))
+    ne_countries = gpd.read_file(ne_path)
     bbox = ne_countries.loc[ne_countries['ISO_A3']==country_code].geometry.buffer(1).values[0].bounds
 
     df_ds = {}
@@ -105,11 +105,10 @@ def load_storm_data(climate_model,basin,bbox):
     - df_ds (pd.DataFrame): pandas DataFrame with interpolated wind speeds for different return periods and geometry column
     """
     # set paths
-    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
 
     filename = os.path.join(tc_path, f'STORM_FIXED_RETURN_PERIODS{climate_model}_{basin}.nc')
     
-
     # load data from NetCDF file
     with xr.open_dataset(filename) as ds:
         
@@ -161,10 +160,10 @@ def load_storm_data(climate_model,basin,bbox):
 def clip_flood_data(country_code):
 
     # set paths
-    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
 
     # load country geometry file and create geometry to clip
-    ne_countries = gpd.read_file(os.path.join(data_path,'..',"natural_earth","ne_10m_admin_0_countries.shp"))
+    ne_countries = gpd.read_file(ne_path)
     geometry = ne_countries.loc[ne_countries['ISO_A3']==country_code].geometry.values[0]
     geoms = [mapping(geometry)]
     
@@ -172,25 +171,18 @@ def clip_flood_data(country_code):
     rps = ['0001','0002','0005','0010','0025','0050','0100','0250','0500','1000']
     climate_models = ['historical','rcp8p5']
     
-    "/scistor/ivm/data_catalogue/open_street_map/pg_risk_analysis/GLOFRIS/global/inuncoast_historical_nosub_hist_rp0001_0.tif"
+    #"/scistor/ivm/data_catalogue/open_street_map/pg_risk_analysis/GLOFRIS/global/inuncoast_historical_nosub_hist_rp0001_0.tif"
 
     for rp in rps:
         #global input_file
         for climate_model in climate_models:
             if climate_model=='historical':
-                #f rps=='0001':
-                    input_file = os.path.join(fl_path,'global',
-                                              'inuncoast_{}_nosub_hist_rp{}_0.tif'.format(climate_model,rp)) 
-                #elif rps==['0002','0005','0010','0025','0050','0100','0250','0500','1000']:
-                #    input_file = os.path.join(fl_path,'global',
-                #                              'inuncoast_{}_nosub_hist_rp{}_0.tif'.format(climate_model,rp)) 
+                input_file = os.path.join(fl_path,'global',
+                                          'inuncoast_{}_nosub_hist_rp{}_0.tif'.format(climate_model,rp)) 
+ 
             elif climate_model=='rcp8p5':
-                #f rps=='0001':
-                    input_file = os.path.join(fl_path,'global',
-                                              'inuncoast_{}_nosub_2030_rp{}_0.tif'.format(climate_model,rp))
-                #elif rps==['0002','0005','0010','0025','0050','0100','0250','0500','1000']:
-                #    input_file = os.path.join(fl_path,'global',
-                #                              'inuncoast_{}_nosub_2030_rp{}_0.tif'.format(climate_model,rp))
+                input_file = os.path.join(fl_path,'global',
+                                          'inuncoast_{}_nosub_2030_rp{}_0.tif'.format(climate_model,rp))
             
             # load raster file and save clipped version
             with rasterio.open(input_file) as src:
@@ -210,19 +202,19 @@ def clip_flood_data(country_code):
                 with rasterio.open(file_path, "w", **out_meta) as dest:
                     dest.write(out_image)
 
-def load_flood_data(country_code,scenario_type):
+def load_flood_data(country_code,climate_model):
 
     # set paths
-    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
      
     rps = ['0001','0002','0005','0010','0025','0050','0100','0250','0500','1000']
     collect_df_ds = []
     
-    if scenario_type=='historical':
+    if climate_model=='historical':
         print('Loading historical coastal flood data ...')
         for rp in rps:
             #for file in files:
-            file_path = os.path.join(fl_path,'country','{}_{}_nosub_hist_rp{}_0.tif'.format(country_code,scenario_type,rp))
+            file_path = os.path.join(fl_path,'country','{}_{}_nosub_hist_rp{}_0.tif'.format(country_code,climate_model,rp))
             with xr.open_dataset(file_path) as ds: #, engine="rasterio"
                 df_ds = ds.to_dataframe().reset_index()
                 df_ds['geometry'] = pygeos.points(df_ds.x,y=df_ds.y)
@@ -241,11 +233,11 @@ def load_flood_data(country_code,scenario_type):
                  .merge(collect_df_ds[5]).merge(collect_df_ds[6]).merge(collect_df_ds[7]).merge(collect_df_ds[8]).merge(collect_df_ds[9])
         df_all = df_all.loc[df_all['rp1000']>0].reset_index(drop=True)
 
-    elif scenario_type=='rcp8p5':
+    elif climate_model=='rcp8p5':
         print('Loading future coastal flood data ...')
         for rp in rps:
             #for file in files:
-            file_path = os.path.join(fl_path,'country','{}_{}_nosub_2030_rp{}_0.tif'.format(country_code,scenario_type,rp))
+            file_path = os.path.join(fl_path,'country','{}_{}_nosub_2030_rp{}_0.tif'.format(country_code,climate_model,rp))
             with xr.open_dataset(file_path) as ds: #, engine="rasterio"
                 df_ds = ds.to_dataframe().reset_index()
                 df_ds['geometry'] = pygeos.points(df_ds.x,y=df_ds.y)
@@ -265,11 +257,11 @@ def load_flood_data(country_code,scenario_type):
     return df_all
 
 def open_flood_data(country_code):
-    scenario_types = ['historical','rcp8p5']
+    
+    climate_models = ['historical','rcp8p5']
     df_ds = {}
-    for scenario_type in scenario_types:
-        df_ds_sc = load_flood_data(country_code,scenario_type)
-
-        df_ds[scenario_type] = df_ds_sc
+    for climate_model in climate_models:
+        df_ds_sc = load_flood_data(country_code,climate_model)
+        df_ds[climate_model] = df_ds_sc
     
     return df_ds

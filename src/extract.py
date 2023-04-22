@@ -189,6 +189,8 @@ def extract_osm_infrastructure(country_code,osm_data_path):
     Returns:
         _type_: _description_
     """
+    # set paths
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
     
     # lines
     osm_path = os.path.join(osm_data_path,'{}.osm.pbf'.format(country_code))
@@ -228,7 +230,7 @@ def extract_pg_data(country_code,pg_type):
     """
 
     # set paths
-    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path = set_paths()
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
 
 
     files = [x for x in os.listdir(pg_data_path)  if country_code in x ]
@@ -258,12 +260,16 @@ def extract_pg_data(country_code,pg_type):
     return pg_data_country
 
 def open_pg_data(country_code):
+    # set paths
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
+    
     pg_lines = extract_pg_data(country_code,'line')
     pg_points = extract_pg_data(country_code,'point')
     
     return pg_lines,pg_points
 
-
+"""
 if __name__ == "__main__":
     if 
     osm_damage_infra = country_analysis_osm(sys.argv[1],sys.argv[2]) #country_code, hazard_type
+"""
