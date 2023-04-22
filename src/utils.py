@@ -3,11 +3,7 @@ import pygeos
 import pyproj
 import numpy as np
 
-<<<<<<< HEAD
 def set_paths(local=False): # set local=False if run on cluster
-=======
-def set_paths(local=False): #set to False if run on cluster
->>>>>>> e8e251aee62cccc762e09b76df9b70d4b89adb3d
 
     if local == True:
         data_path = os.path.join('C:\\','Data','pg_risk_analysis')
@@ -26,12 +22,8 @@ def set_paths(local=False): #set to False if run on cluster
         osm_data_path = os.path.join(base_path,'country_osm')
         pg_data_path = os.path.join(data_path,'pg_data')
         vul_curve_path = os.path.join(data_path,'vulnerability_curves','input_vulnerability_data.xlsx')
-<<<<<<< HEAD
         #output_path = os.path.join('C:\\','projects','pg_risk_analysis','output')
         output_path = os.path.join("/scistor/ivm/mye500/projects/pg_risk_analysis/output")
-=======
-        output_path = os.path.join('/scistor/ivm/mye500/projects/pg_risk_analysis/output')
->>>>>>> e8e251aee62cccc762e09b76df9b70d4b89adb3d
         ne_path = os.path.join(data_path,"natural_earth","ne_10m_admin_0_countries.shp")
 
     return data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path
