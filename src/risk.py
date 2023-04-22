@@ -15,6 +15,7 @@ import glob
 from shapely.geometry import mapping
 pd.options.mode.chained_assignment = None
 from rasterio.mask import mask
+from scipy import integrate
 
 # load from other py files within pg_risk_analysis
 from utils import reproject,set_paths

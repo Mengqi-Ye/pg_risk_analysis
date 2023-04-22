@@ -42,19 +42,12 @@ def clip_flood_data(country_code):
         #global input_file
         for climate_model in climate_models:
             if climate_model=='historical':
-                #f rps=='0001':
-                    input_file = os.path.join(fl_path,'global',
-                                              'inuncoast_{}_nosub_hist_rp{}_0.tif'.format(climate_model,rp)) 
-                #elif rps==['0002','0005','0010','0025','0050','0100','0250','0500','1000']:
-                #    input_file = os.path.join(fl_path,'global',
-                #                              'inuncoast_{}_nosub_hist_rp{}_0.tif'.format(climate_model,rp)) 
+                input_file = os.path.join(fl_path,'global',
+                                          'inuncoast_{}_nosub_hist_rp{}_0.tif'.format(climate_model,rp))
+                
             elif climate_model=='rcp8p5':
-                #f rps=='0001':
-                    input_file = os.path.join(fl_path,'global',
-                                              'inuncoast_{}_nosub_2030_rp{}_0.tif'.format(climate_model,rp))
-                #elif rps==['0002','0005','0010','0025','0050','0100','0250','0500','1000']:
-                #    input_file = os.path.join(fl_path,'global',
-                #                              'inuncoast_{}_nosub_2030_rp{}_0.tif'.format(climate_model,rp))
+                input_file = os.path.join(fl_path,'global',
+                                          'inuncoast_{}_nosub_2030_rp{}_0.tif'.format(climate_model,rp))
             
             # load raster file and save clipped version
             with rasterio.open(input_file) as src:
@@ -73,8 +66,3 @@ def clip_flood_data(country_code):
 
                 with rasterio.open(file_path, "w", **out_meta) as dest:
                     dest.write(out_image)
-                    
-if __name__ == "__main__":
-    
-    #osm_damage_infra = country_analysis_osm(sys.argv[1],sys.argv[2]) #country_code, hazard_type
-    clip_flood_data(sys.argv[1])
