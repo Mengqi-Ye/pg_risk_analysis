@@ -155,12 +155,13 @@ def load_storm_data(climate_model,basin,bbox):
 
 ##### ##### ##### ##### ##### ##### ##### #####  
 ##### ##### ##### FLOOD DATA  ##### ##### ##### 
-##### ##### ##### ##### ##### ##### ##### #####     
+##### ##### ##### ##### ##### ##### ##### ##### 
 
-def clip_flood_data(country_code):
+def load_flood_data(country_code,climate_model):
 
     # set paths
     data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
+<<<<<<< HEAD
 
     # load country geometry file and create geometry to clip
     ne_countries = gpd.read_file(ne_path)
@@ -206,6 +207,8 @@ def load_flood_data(country_code,climate_model):
 
     # set paths
     data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
+=======
+>>>>>>> e8e251aee62cccc762e09b76df9b70d4b89adb3d
      
     rps = ['0001','0002','0005','0010','0025','0050','0100','0250','0500','1000']
     collect_df_ds = []
@@ -262,6 +265,10 @@ def open_flood_data(country_code):
     df_ds = {}
     for climate_model in climate_models:
         df_ds_sc = load_flood_data(country_code,climate_model)
+<<<<<<< HEAD
+=======
+
+>>>>>>> e8e251aee62cccc762e09b76df9b70d4b89adb3d
         df_ds[climate_model] = df_ds_sc
     
     return df_ds
