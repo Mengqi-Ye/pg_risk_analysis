@@ -299,11 +299,14 @@ def risk_output(country_code,hazard_type,infra_type):
                                         engine='openpyxl')
                 
                 # write each dataframe to a different sheet
-                line_risk.to_excel(writer, sheet_name='line_risk')
-                plant_risk.to_excel(writer, sheet_name='plant_risk')
-                substation_risk.to_excel(writer, sheet_name='substation_risk')
-                tower_risk.to_excel(writer, sheet_name='tower_risk')
-                pole_risk.to_excel(writer, sheet_name='pole_risk')
+                if len(line_risk) != 0:
+                    line_risk.to_excel(writer, sheet_name='line_risk')
+                if len(substation_risk) != 0:
+                    substation_risk.to_excel(writer, sheet_name='substation_risk')
+                if len(tower_risk) != 0:
+                    tower_risk.to_excel(writer, sheet_name='tower_risk')
+                if len(pole_risk) != 0:
+                    pole_risk.to_excel(writer, sheet_name='pole_risk')
                 
                 # save the Excel file
                 writer.save()
@@ -313,11 +316,16 @@ def risk_output(country_code,hazard_type,infra_type):
             writer = pd.ExcelWriter(os.path.join(output_path,'risk','{}_{}_{}_risk'.format(country_code,infra_type,hazard_type)+'.xlsx'), engine='openpyxl')
             
             # write each dataframe to a different sheet
-            line_risk.to_excel(writer, sheet_name='line_risk')
-            plant_risk.to_excel(writer, sheet_name='plant_risk')
-            substation_risk.to_excel(writer, sheet_name='substation_risk')
-            tower_risk.to_excel(writer, sheet_name='tower_risk')
-            pole_risk.to_excel(writer, sheet_name='pole_risk')
+            if len(line_risk) != 0:
+                line_risk.to_excel(writer, sheet_name='line_risk')
+            if len(plant_risk) != 0:
+                plant_risk.to_excel(writer, sheet_name='plant_risk')
+            if len(substation_risk) != 0:
+                substation_risk.to_excel(writer, sheet_name='substation_risk')
+            if len(tower_risk) != 0:
+                tower_risk.to_excel(writer, sheet_name='tower_risk')
+            if len(pole_risk) != 0:
+                pole_risk.to_excel(writer, sheet_name='pole_risk')
             
             # save the Excel file
             writer.save()
