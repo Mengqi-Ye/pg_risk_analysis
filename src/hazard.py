@@ -116,20 +116,23 @@ def load_storm_data(climate_model,basin,bbox):
         ds.rio.write_crs(4326, inplace=True)
         ds = ds.rio.clip_box(minx=bbox[0], miny=bbox[1], maxx=bbox[2], maxy=bbox[3])
         
+        #convert 10-min sustained wind speed to 3-s gust wind speed
+        ds['mean_3s'] = ds['mean']/0.88*1.11 
+
         # get the mean values
-        df_ds = ds['mean'].to_dataframe().unstack(level=2).reset_index()
+        df_ds = ds['mean_3s'].to_dataframe().unstack(level=2).reset_index()
 
         # create geometry values and drop lat lon columns
         df_ds['geometry'] = [pygeos.points(x) for x in list(zip(df_ds['lon'], df_ds['lat']))]
         df_ds = df_ds.drop(['lat', 'lon'], axis=1, level=0)
         
-        # interpolate wind speeds of 1, 2, and 5-yr return period
+        # interpolate wind speeds of 1,2,5,25,and 250-yr return period
         ## rename columns to return periods (must be integer for interpolating)
         df_ds_geometry = pd.DataFrame()
         df_ds_geometry['geometry'] = df_ds['geometry']
         df_ds = df_ds.drop(['geometry'], axis=1, level=0)
-        df_ds = df_ds['mean']
-        df_ds.columns = [int(x) for x in ds['mean']['rp']]
+        df_ds = df_ds['mean_3s']
+        df_ds.columns = [int(x) for x in ds['mean_3s']['rp']]
         df_ds[1] = np.nan
         df_ds[2] = np.nan
         df_ds[5] = np.nan
@@ -139,6 +142,7 @@ def load_storm_data(climate_model,basin,bbox):
         df_ds = df_ds.interpolate(method='linear', axis=1, limit_direction='both')
         df_ds['geometry'] = df_ds_geometry['geometry']
         df_ds = df_ds[[1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 'geometry']]
+        print(df_ds.head())
         
         # rename columns to return periods
         df_ds.columns = ['1_{}{}'.format(int(x), climate_model) for x in [1, 2, 5, 10, 25, 50, 100, 250, 500, 1000]] +['geometry']     
