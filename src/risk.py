@@ -302,7 +302,7 @@ def risk_output(country_code,hazard_type,infra_type):
                 if len(line_risk) != 0:
                     line_risk.to_excel(writer, sheet_name='line_risk')
                 if len(substation_risk) != 0:
-                    substation_risk.to_excel(writer, sheet_name='substation_risk')
+                    substation_risk[climate_model].to_excel(writer, sheet_name='substation_risk')
                 if len(tower_risk) != 0:
                     tower_risk.to_excel(writer, sheet_name='tower_risk')
                 if len(pole_risk) != 0:

@@ -39,7 +39,7 @@ def load_curves_maxdam(vul_curve_path,hazard_type):
         sheet_name = 'flooding_curves'
     
     # load curves and maximum damages as separate inputs
-    curves = pd.read_excel(vul_curve_path,sheet_name=sheet_name,skiprows=11,index_col=[0])
+    curves = pd.read_excel(vul_curve_path,sheet_name=sheet_name,skiprows=10,index_col=[0])
     
     if hazard_type == 'fl':
         maxdam = pd.read_excel(vul_curve_path,sheet_name=sheet_name,index_col=[0]).iloc[:8]

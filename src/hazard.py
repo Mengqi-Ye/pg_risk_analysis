@@ -142,7 +142,7 @@ def load_storm_data(climate_model,basin,bbox):
         df_ds = df_ds.interpolate(method='linear', axis=1, limit_direction='both')
         df_ds['geometry'] = df_ds_geometry['geometry']
         df_ds = df_ds[[1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 'geometry']]
-        print(df_ds.head())
+        #print(df_ds.head())
         
         # rename columns to return periods
         df_ds.columns = ['1_{}{}'.format(int(x), climate_model) for x in [1, 2, 5, 10, 25, 50, 100, 250, 500, 1000]] +['geometry']     
