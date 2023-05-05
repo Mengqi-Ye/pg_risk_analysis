@@ -23,7 +23,6 @@ from utils import reproject,set_paths
 gdal.SetConfigOption("OSM_CONFIG_FILE", os.path.join('..',"osmconf.ini"))
 
 def clip_flood_data(country_code):
-
     # set paths
     data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
 
@@ -36,19 +35,17 @@ def clip_flood_data(country_code):
     rps = ['0001','0002','0005','0010','0025','0050','0100','0250','0500','1000']
     climate_models = ['historical','rcp8p5']
     
-    #"/scistor/ivm/data_catalogue/open_street_map/pg_risk_analysis/GLOFRIS/global/inuncoast_historical_nosub_hist_rp0001_0.tif"
-
     for rp in rps:
         #global input_file
         for climate_model in climate_models:
             if climate_model=='historical':
                 input_file = os.path.join(fl_path,'global',
-                                          'inuncoast_{}_nosub_hist_rp{}_0.tif'.format(climate_model,rp))
-                
+                                          'inuncoast_{}_nosub_hist_rp{}_0.tif'.format(climate_model,rp)) 
+ 
             elif climate_model=='rcp8p5':
                 input_file = os.path.join(fl_path,'global',
                                           'inuncoast_{}_nosub_2030_rp{}_0.tif'.format(climate_model,rp))
-            
+
             # load raster file and save clipped version
             with rasterio.open(input_file) as src:
                 out_image, out_transform = mask(src, geoms, crop=True)

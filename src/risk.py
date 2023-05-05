@@ -31,8 +31,7 @@ gdal.SetConfigOption("OSM_CONFIG_FILE", os.path.join('..',"osmconf.ini"))
 ##### ##### #####   OSM RISK  ##### ##### ##### 
 ##### ##### ##### ##### ##### ##### ##### #####
 
-def country_analysis_osm(country_code,hazard_type): #
-
+def country_analysis_osm(country_code,hazard_type):
     # set paths
     data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
     
@@ -54,12 +53,12 @@ def country_analysis_osm(country_code,hazard_type): #
         for i in range(len(osm_damage_infra)):
             for climate_model in climate_models:
                 df = osm_damage_infra[i][climate_model]
-                    
+
                 if len(df) == 0:
                     print("No {}_{} risk of infra_type {} in {}".format(hazard_type,climate_model,i,country_code))
 
                 else:
-                    with pd.ExcelWriter(os.path.join(output_path,'damage','{}_osm_{}_{}_damage_{}'.format(country_code,hazard_type,climate_model,i)+'.xlsx')) as writer:
+                    with pd.ExcelWriter(os.path.join(output_path,'damage','{}_osm_{}{}_damage_{}'.format(country_code,hazard_type,climate_model,i)+'.xlsx')) as writer:
                         df.to_excel(writer)
 
                     df['rp'] = df['rp'].replace(['1_1{}'.format(climate_model),'1_2{}'.format(climate_model),'1_5{}'.format(climate_model),
@@ -74,7 +73,7 @@ def country_analysis_osm(country_code,hazard_type): #
                     
                     curve_code_tower = ['W3_1','W3_2','W3_3','W3_4','W3_5','W3_6','W3_7','W3_8','W3_9','W3_10','W3_11','W3_12',
                                         'W3_13','W3_14','W3_15','W3_16','W3_17','W3_18','W3_19','W3_20','W3_21','W3_22','W3_22',
-                                        'W3_24','W3_25','W3_26','W3_27','W3_28']
+                                        'W3_24','W3_25','W3_26','W3_27','W3_28','W3_29','W3_30']
                     
                     curve_code_pole = ['W4_1','W4_2','W4_3','W4_4','W4_5','W4_6','W4_7','W4_8','W4_9','W4_10','W4_11','W4_12',
                                     'W4_13','W4_14','W4_15','W4_16','W4_17','W4_18','W4_19','W4_20','W4_21','W4_22','W4_23',
@@ -93,12 +92,12 @@ def country_analysis_osm(country_code,hazard_type): #
                             loss_list_lower = loss_list.lowerdam.values.tolist()
                             loss_list_upper = loss_list.upperdam.values.tolist()
                             RPS = loss_list.rp.values.tolist()
-                            line_risk[curve_code] = {
+                            line_risk[climate_model] = {
                                 'mean_risk': integrate.simps(y=loss_list_mean[::-1], x=RPS[::-1]),
                                 'lower_risk': integrate.simps(y=loss_list_lower[::-1], x=RPS[::-1]),
                                 'upper_risk': integrate.simps(y=loss_list_upper[::-1], x=RPS[::-1])
                             }
-
+                            
                     #assess risk for power substations                
                     elif i == 1:                        
                         for curve_code in curve_code_substation:
@@ -108,7 +107,7 @@ def country_analysis_osm(country_code,hazard_type): #
                             loss_list_lower = loss_list.lowerdam.values.tolist()
                             loss_list_upper = loss_list.upperdam.values.tolist()
                             RPS = loss_list.rp.values.tolist()
-                            substation_risk[curve_code] = {
+                            substation_risk[climate_model] = {
                                 'mean_risk': integrate.simps(y=loss_list_mean[::-1], x=RPS[::-1]),
                                 'lower_risk': integrate.simps(y=loss_list_lower[::-1], x=RPS[::-1]),
                                 'upper_risk': integrate.simps(y=loss_list_upper[::-1], x=RPS[::-1])
@@ -128,7 +127,7 @@ def country_analysis_osm(country_code,hazard_type): #
                                 loss_list_upper = loss_list.upperdam.values.tolist()
                                 RPS = df.loc[df['curve'] == curve_code]
                                 RPS = RPS.rp.values.tolist()
-                                tower_risk[curve_code] = {
+                                tower_risk[climate_model] = {
                                     'mean_risk': integrate.simps(y=loss_list_mean[::-1], x=RPS[::-1]),
                                     'lower_risk': integrate.simps(y=loss_list_lower[::-1], x=RPS[::-1]),
                                     'upper_risk': integrate.simps(y=loss_list_upper[::-1], x=RPS[::-1])
@@ -146,7 +145,7 @@ def country_analysis_osm(country_code,hazard_type): #
                                 loss_list_upper = loss_list.upperdam.values.tolist()
                                 RPS = df.loc[df['curve'] == curve_code]
                                 RPS = RPS.rp.values.tolist()
-                                pole_risk[curve_code] = {
+                                pole_risk[climate_model] = {
                                     'mean_risk': integrate.simps(y=loss_list_mean[::-1], x=RPS[::-1]),
                                     'lower_risk': integrate.simps(y=loss_list_lower[::-1], x=RPS[::-1]),
                                     'upper_risk': integrate.simps(y=loss_list_upper[::-1], x=RPS[::-1])
@@ -268,13 +267,141 @@ def country_analysis_pg(country_code,hazard_type):
     # set paths
     data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
     
-    # extract infrastructure data from OSM
-    pg_infra = open_pg_data(country_code)
+    # extract infrastructure data from gov data
+    pg_power_infra = extract_pg_infrastructure(country_code)
+    
+    # assess damage to hazard_type
+    pg_damage_infra = assess_damage_pg(country_code,pg_power_infra,hazard_type)
+    
+    line_risk = {}
+    plant_risk = {}
+    substation_risk = {}
 
-    # assess damage to wind storms
-    pg_damage_infra = assess_damage_pg(country_code,pg_infra,hazard_type)
+    if hazard_type=='tc':
+        climate_models = ['_CMCC-CM2-VHR4','_CNRM-CM6-1-HR'] #'','_CMCC-CM2-VHR4','_CNRM-CM6-1-HR','_EC-Earth3P-HR','_HadGEM3-GC31-HM'
 
-    return pg_damage_infra
+        for i in range(len(pg_damage_infra)):
+            for climate_model in climate_models:
+                df = pg_damage_infra[i][climate_model]
+                    
+                if len(df) == 0:
+                    print("No {}_{} risk of infra_type {} in {}".format(hazard_type,climate_model,i,country_code))
+
+                else:
+                    with pd.ExcelWriter(os.path.join(output_path,'damage','{}_pg_{}{}_damage_{}'.format(country_code,hazard_type,climate_model,i)+'.xlsx')) as writer:
+                        df.to_excel(writer)
+
+                    df['rp'] = df['rp'].replace(['1_1{}'.format(climate_model),'1_2{}'.format(climate_model),'1_5{}'.format(climate_model),
+                                                '1_10{}'.format(climate_model),'1_25{}'.format(climate_model),'1_50{}'.format(climate_model),
+                                                '1_100{}'.format(climate_model),'1_250{}'.format(climate_model),'1_500{}'.format(climate_model),
+                                                '1_1000{}'.format(climate_model)],
+                                                [1,0.5,0.2,0.1,0.04,0.02,0.01,0.004,0.002,0.001])
+                    
+                    curve_code_substation = ['W2_1_1','W2_1_2','W2_1_3','W2_2_1','W2_2_2','W2_2_3','W2_3_1','W2_3_2','W2_3_3',
+                                            'W2_4_1','W2_4_2','W2_4_3','W2_5_1','W2_5_2','W2_5_3','W2_6_1','W2_6_2','W2_6_3',
+                                            'W2_7_1','W2_7_2','W2_7_3']
+                    
+                    curve_code_line = ['W5_1','W5_2','W5_3']
+
+                    #assess risk for power lines
+                    if i == 0:
+                        for curve_code in curve_code_line:
+                            loss_list = df.loc[df['curve'] == curve_code]
+                            loss_list = loss_list.sort_values(by='rp',ascending=False)
+                            loss_list_mean = loss_list.meandam.values.tolist()
+                            loss_list_lower = loss_list.lowerdam.values.tolist()
+                            loss_list_upper = loss_list.upperdam.values.tolist()
+                            RPS = loss_list.rp.values.tolist()
+                            
+                            line_risk[curve_code] = {
+                                'mean_risk': integrate.simps(y=loss_list_mean[::-1], x=RPS[::-1]),
+                                'lower_risk': integrate.simps(y=loss_list_lower[::-1], x=RPS[::-1]),
+                                'upper_risk': integrate.simps(y=loss_list_upper[::-1], x=RPS[::-1])
+                            }
+                            #print(line_risk_curve)
+                    
+                    #assess risk for power substations                
+                    elif i == 1:                        
+                        for curve_code in curve_code_substation:
+                            loss_list = df.loc[df['curve'] == curve_code]
+                            loss_list = loss_list.sort_values(by='rp',ascending=False)
+                            loss_list_mean = loss_list.meandam.values.tolist()
+                            loss_list_lower = loss_list.lowerdam.values.tolist()
+                            loss_list_upper = loss_list.upperdam.values.tolist()
+                            RPS = loss_list.rp.values.tolist()
+                            
+                            substation_risk[curve_code] = {
+                                'mean_risk': integrate.simps(y=loss_list_mean[::-1], x=RPS[::-1]),
+                                'lower_risk': integrate.simps(y=loss_list_lower[::-1], x=RPS[::-1]),
+                                'upper_risk': integrate.simps(y=loss_list_upper[::-1], x=RPS[::-1])
+                            }
+
+
+    elif hazard_type=='fl':
+        climate_models = ['historical','rcp8p5']
+    
+        for i in range(len(pg_damage_infra)):
+            for climate_model in climate_models:
+                df = pg_damage_infra[i][climate_model]
+                    
+                if len(df) == 0:
+                    print("No {}_{} risk of infra_type {} in {}".format(hazard_type,climate_model,i,country_code))
+
+                else:
+                    with pd.ExcelWriter(os.path.join(output_path,'damage','{}_pg_{}_{}_damage_{}'.format(country_code,hazard_type,climate_model,i)+'.xlsx')) as writer:
+                        df.to_excel(writer)
+
+                    df['rp'] = df['rp'].replace(['rp0001','rp0002','rp0005','rp0010','rp0025','rp0050','rp0100','rp0250','rp0500','rp1000'],
+                                                [1,0.5,0.2,0.1,0.04,0.02,0.01,0.004,0.002,0.001])
+
+                    #assess risk for power lines
+                    if i == 0:
+                        loss_list_mean = df.meandam.values.tolist()
+                        loss_list_lower = df.lowerdam.values.tolist()
+                        loss_list_upper = df.upperdam.values.tolist()
+                        RPS = df.rp.values.tolist()
+                        line_risk[climate_model] = {
+                            'mean_risk': integrate.simps(y=loss_list_mean[::-1], x=RPS[::-1]),
+                            'lower_risk': integrate.simps(y=loss_list_lower[::-1], x=RPS[::-1]),
+                            'upper_risk': integrate.simps(y=loss_list_upper[::-1], x=RPS[::-1])
+                        }
+
+                    #assess risk for power plants and substations                
+                    elif i == 1:
+                        loss_list = df.loc[df['asset_type'] == 'plant']
+                        if len(loss_list) == 0:
+                            print("No risk of plants ...")
+                        
+                        else:
+                            loss_list_mean = loss_list.meandam.values.tolist()
+                            loss_list_lower = loss_list.lowerdam.values.tolist()
+                            loss_list_upper = loss_list.upperdam.values.tolist()
+                            RPS = df.loc[df['asset_type'] == 'plant']
+                            RPS = RPS.rp.values.tolist()
+                            plant_risk[climate_model] = {
+                                'mean_risk': integrate.simps(y=loss_list_mean[::-1], x=RPS[::-1]),
+                                'lower_risk': integrate.simps(y=loss_list_lower[::-1], x=RPS[::-1]),
+                                'upper_risk': integrate.simps(y=loss_list_upper[::-1], x=RPS[::-1])
+                            }
+                            
+                        loss_list = df.loc[df['asset_type'] == 'substation']
+                        if len(loss_list) == 0:
+                            print("No risk of substations ...")
+                        
+                        else:
+                            loss_list_mean = loss_list.meandam.values.tolist()
+                            loss_list_lower = loss_list.lowerdam.values.tolist()
+                            loss_list_upper = loss_list.upperdam.values.tolist()
+                            RPS = df.loc[df['asset_type'] == 'substation']
+                            RPS = RPS.rp.values.tolist()
+                            substation_risk[climate_model] = {
+                                'mean_risk': integrate.simps(y=loss_list_mean[::-1], x=RPS[::-1]),
+                                'lower_risk': integrate.simps(y=loss_list_lower[::-1], x=RPS[::-1]),
+                                'upper_risk': integrate.simps(y=loss_list_upper[::-1], x=RPS[::-1])
+                                }
+                            
+    #return pd.DataFrame(line_risk),pd.DataFrame(plant_risk),pd.DataFrame(substation_risk)
+    return line_risk,plant_risk,substation_risk
 
 
 ##### ##### ##### ##### ##### ##### ##### #####  
@@ -282,10 +409,9 @@ def country_analysis_pg(country_code,hazard_type):
 ##### ##### ##### ##### ##### ##### ##### #####
     
 def risk_output(country_code,hazard_type,infra_type):
-    
     # set paths
     data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
-    
+  
     if infra_type == 'osm':
         line_risk,plant_risk,substation_risk,tower_risk,pole_risk = country_analysis_osm(country_code,hazard_type)
         
@@ -300,13 +426,13 @@ def risk_output(country_code,hazard_type,infra_type):
                 
                 # write each dataframe to a different sheet
                 if len(line_risk) != 0:
-                    line_risk.to_excel(writer, sheet_name='line_risk')
+                    line_risk[climate_model].to_excel(writer, sheet_name='line_risk')
                 if len(substation_risk) != 0:
                     substation_risk[climate_model].to_excel(writer, sheet_name='substation_risk')
                 if len(tower_risk) != 0:
-                    tower_risk.to_excel(writer, sheet_name='tower_risk')
+                    tower_risk[climate_model].to_excel(writer, sheet_name='tower_risk')
                 if len(pole_risk) != 0:
-                    pole_risk.to_excel(writer, sheet_name='pole_risk')
+                    pole_risk[climate_model].to_excel(writer, sheet_name='pole_risk')
                 
                 # save the Excel file
                 writer.save()
@@ -331,8 +457,40 @@ def risk_output(country_code,hazard_type,infra_type):
             writer.save()
 
     elif infra_type == 'gov':
-        total_risk = pd.DataFrame(country_analysis_pg(country_code,hazard_type))
-        total_risk.to_excel(os.path.join(output_path,'risk','{}_{}_{}_risk'.format(country_code,infra_type,hazard_type)+'.xlsx'))
+        line_risk,plant_risk,substation_risk = country_analysis_pg(country_code,hazard_type)
+        
+        if hazard_type == 'tc':
+            climate_models = ['','_CMCC-CM2-VHR4','_CNRM-CM6-1-HR','_EC-Earth3P-HR','_HadGEM3-GC31-HM']
+
+            for climate_model in climate_models:
+
+                # create a Pandas Excel writer using openpyxl engine
+                writer = pd.ExcelWriter(os.path.join(output_path,'risk','{}_{}_{}{}_risk'.format(country_code,infra_type,hazard_type,climate_model)+'.xlsx'),
+                                        engine='openpyxl')
+                
+                # write each dataframe to a different sheet
+                if len(line_risk) != 0:
+                    line_risk[climate_model].to_excel(writer, sheet_name='line_risk')
+                if len(substation_risk) != 0:
+                    substation_risk[climate_model].to_excel(writer, sheet_name='substation_risk')
+                    
+                # save the Excel file
+                writer.save()
+
+        elif hazard_type == 'fl':
+            # create a Pandas Excel writer using openpyxl engine
+            writer = pd.ExcelWriter(os.path.join(output_path,'risk','{}_{}_{}_risk'.format(country_code,infra_type,hazard_type)+'.xlsx'), engine='openpyxl')
+            
+            # write each dataframe to a different sheet
+            if len(line_risk) != 0:
+                line_risk.to_excel(writer, sheet_name='line_risk')
+            if len(plant_risk) != 0:
+                plant_risk.to_excel(writer, sheet_name='plant_risk')
+            if len(substation_risk) != 0:
+                substation_risk.to_excel(writer, sheet_name='substation_risk')
+
+            # save the Excel file
+            writer.save()
 
 
 if __name__ == "__main__":

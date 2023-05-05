@@ -39,7 +39,7 @@ def open_storm_data(country_code):
     """
     # set paths
     data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
-
+    
     # list of available climate models
     climate_models = ['','_CMCC-CM2-VHR4','_CNRM-CM6-1-HR','_EC-Earth3P-HR','_HadGEM3-GC31-HM']
 
@@ -64,7 +64,7 @@ def open_storm_data(country_code):
     }
 
     # load country geometry file and create geometry to clip
-    ne_countries = gpd.read_file(ne_path)
+    ne_countries = gpd.read_file(os.path.join(data_path,'..',"natural_earth","ne_10m_admin_0_countries.shp"))
     bbox = ne_countries.loc[ne_countries['ISO_A3']==country_code].geometry.buffer(1).values[0].bounds
 
     df_ds = {}
@@ -115,9 +115,7 @@ def load_storm_data(climate_model,basin,bbox):
         # convert data to WGS84 CRS
         ds.rio.write_crs(4326, inplace=True)
         ds = ds.rio.clip_box(minx=bbox[0], miny=bbox[1], maxx=bbox[2], maxy=bbox[3])
-        
-        #convert 10-min sustained wind speed to 3-s gust wind speed
-        ds['mean_3s'] = ds['mean']/0.88*1.11 
+        ds['mean_3s'] = ds['mean']/0.88*1.11 #convert 10-min sustained wind speed to 3-s gust wind speed
 
         # get the mean values
         df_ds = ds['mean_3s'].to_dataframe().unstack(level=2).reset_index()
@@ -142,18 +140,18 @@ def load_storm_data(climate_model,basin,bbox):
         df_ds = df_ds.interpolate(method='linear', axis=1, limit_direction='both')
         df_ds['geometry'] = df_ds_geometry['geometry']
         df_ds = df_ds[[1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 'geometry']]
-        #print(df_ds.head())
+        
         
         # rename columns to return periods
         df_ds.columns = ['1_{}{}'.format(int(x), climate_model) for x in [1, 2, 5, 10, 25, 50, 100, 250, 500, 1000]] +['geometry']     
         df_ds['geometry'] = pygeos.buffer(df_ds.geometry, radius=0.1/2, cap_style='square').values
-        
+
         # reproject the geometry column to the specified CRS
         df_ds['geometry'] = reproject(df_ds)
             
         # drop all non values to reduce size
-        #df_ds = df_ds.loc[~df_ds['1_10000{}'.format(climate_model)].isna()].reset_index(drop=True)
         df_ds = df_ds.fillna(0)
+
 
     return df_ds
 
@@ -161,53 +159,7 @@ def load_storm_data(climate_model,basin,bbox):
 ##### ##### ##### FLOOD DATA  ##### ##### ##### 
 ##### ##### ##### ##### ##### ##### ##### #####     
 
-def clip_flood_data(country_code):
-
-    # set paths
-    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
-
-    # load country geometry file and create geometry to clip
-    ne_countries = gpd.read_file(ne_path)
-    geometry = ne_countries.loc[ne_countries['ISO_A3']==country_code].geometry.values[0]
-    geoms = [mapping(geometry)]
-    
-    #climate_model: historical, rcp4p5, rcp8p5; time_period: hist, 2030, 2050, 2080
-    rps = ['0001','0002','0005','0010','0025','0050','0100','0250','0500','1000']
-    climate_models = ['historical','rcp8p5']
-    
-    #"/scistor/ivm/data_catalogue/open_street_map/pg_risk_analysis/GLOFRIS/global/inuncoast_historical_nosub_hist_rp0001_0.tif"
-
-    for rp in rps:
-        #global input_file
-        for climate_model in climate_models:
-            if climate_model=='historical':
-                input_file = os.path.join(fl_path,'global',
-                                          'inuncoast_{}_nosub_hist_rp{}_0.tif'.format(climate_model,rp)) 
- 
-            elif climate_model=='rcp8p5':
-                input_file = os.path.join(fl_path,'global',
-                                          'inuncoast_{}_nosub_2030_rp{}_0.tif'.format(climate_model,rp))
-            
-            # load raster file and save clipped version
-            with rasterio.open(input_file) as src:
-                out_image, out_transform = mask(src, geoms, crop=True)
-                out_meta = src.meta
-
-                out_meta.update({"driver": "GTiff",
-                         "height": out_image.shape[1],
-                         "width": out_image.shape[2],
-                         "transform": out_transform})
-
-                if 'scistor' in fl_path:
-                    file_path = os.path.join(fl_path,'country','_'.join([country_code]+input_file.split('_')[6:]))
-                else:
-                    file_path = os.path.join(fl_path,'country','_'.join([country_code]+input_file.split('_')[3:]))
-
-                with rasterio.open(file_path, "w", **out_meta) as dest:
-                    dest.write(out_image)
-
 def load_flood_data(country_code,climate_model):
-
     # set paths
     data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
      
@@ -261,7 +213,6 @@ def load_flood_data(country_code,climate_model):
     return df_all
 
 def open_flood_data(country_code):
-    
     climate_models = ['historical','rcp8p5']
     df_ds = {}
     for climate_model in climate_models:

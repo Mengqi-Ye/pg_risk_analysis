@@ -158,6 +158,26 @@ def electricity(osm_path):
     
     return df.reset_index(drop=True)
 
+def retrieve_poly_subs(osm_path, w_list, b_list):
+    """
+    Function to extract electricity substation polygons from OpenStreetMap
+    Arguments:
+        *osm_path* : file path to the .osm.pbf file of the region
+        for which we want to do the analysis.
+        *w_list* :  white list of keywords to search in the other_tags columns
+        *b_list* :  black list of keywords of rows that should not be selected
+    Returns:
+        *GeoDataFrame* : a geopandas GeoDataFrame with specified unique substation.
+    """
+    df = retrieve(osm_path,'multipolygons',['other_tags'])
+    df = df[df.other_tags.str.contains('substation', case=False, na=False)]
+    #df = df.loc[(df.other_tags.str.contains('substation'))]
+    df = df[~df.other_tags.str.contains('|'.join(b_list))]
+    #df = df.reset_index(drop=True).rename(columns={'other_tags': 'asset'})
+    df['asset']  = 'substation' #specify row
+    #df = df.loc[(df.asset == 'substation')] #specify row
+    return df.reset_index(drop=True)
+
 def power_point(osm_path):
     """
     Function to extract energy points from OpenStreetMap  
@@ -218,7 +238,7 @@ def extract_osm_infrastructure(country_code,osm_data_path):
 ##### ##### ##### Extract Gov data  ##### ##### ##### 
 ##### ##### ##### ##### ##### ##### ##### ##### ##### 
 
-def extract_pg_data(country_code,pg_type):
+def extract_pg_infrastructure(country_code):
     """_summary_
 
     Args:
@@ -232,40 +252,34 @@ def extract_pg_data(country_code,pg_type):
     # set paths
     data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
 
-
     files = [x for x in os.listdir(pg_data_path)  if country_code in x ]
+    pg_types = ['line','point']
     
-    if pg_type=='line':
-        for file in files: 
-            file_path = os.path.join(pg_data_path,'{}_{}.gpkg'.format(country_code,pg_type))
+    for pg_type in pg_types:
+        #print(os.path.isfile(os.path.join(pg_data_path,'{}_{}.gpkg'.format(country_code,pg_type))))
+        if os.path.isfile(os.path.join(pg_data_path,'{}_{}.gpkg'.format(country_code,pg_type))):
+            if pg_type=='line':
+                for file in files: 
+                    file_path = os.path.join(pg_data_path,'{}_{}.gpkg'.format(country_code,pg_type))
 
-            pg_data_country = gpd.read_file(file_path)
-            pg_data_country = pd.DataFrame(pg_data_country.copy())
-            pg_data_country.geometry = pygeos.from_shapely(pg_data_country.geometry)
-            pg_data_country['geometry'] = reproject(pg_data_country)
+                    pg_data_country = gpd.read_file(file_path)
+                    pg_data_country = pd.DataFrame(pg_data_country.copy())
+                    pg_data_country.geometry = pygeos.from_shapely(pg_data_country.geometry)
+                    pg_data_country['geometry'] = reproject(pg_data_country)
 
-        pg_data_country = buffer_assets(pg_data_country.loc[pg_data_country.asset.isin(['line'])],buffer_size=100).reset_index(drop=True)
+                pg_lines = buffer_assets(pg_data_country.loc[pg_data_country.asset.isin(['line'])],buffer_size=100).reset_index(drop=True)
 
-    elif pg_type=='point':
-        for file in files:
-            file_path = os.path.join(pg_data_path,'{}_{}.gpkg'.format(country_code,pg_type))
-                
-            pg_data_country = gpd.read_file(file_path)
-            pg_data_country = pd.DataFrame(pg_data_country.copy())
-            pg_data_country.geometry = pygeos.from_shapely(pg_data_country.geometry)
-            pg_data_country['geometry'] = reproject(pg_data_country)
+            elif pg_type=='point':
+                for file in files:
+                    file_path = os.path.join(pg_data_path,'{}_{}.gpkg'.format(country_code,pg_type))
 
-        pg_data_country = buffer_assets(pg_data_country.loc[pg_data_country.asset.isin(['plant_point','substation_point','power_tower','power_pole'])],buffer_size=100).reset_index(drop=True)
+                    pg_data_country = gpd.read_file(file_path)
+                    pg_data_country = pd.DataFrame(pg_data_country.copy())
+                    pg_data_country.geometry = pygeos.from_shapely(pg_data_country.geometry)
+                    pg_data_country['geometry'] = reproject(pg_data_country)
 
-    return pg_data_country
+                pg_points = buffer_assets(pg_data_country.loc[pg_data_country.asset.isin(['plant','substation','power_tower','power_pole'])],buffer_size=100).reset_index(drop=True)
 
-def open_pg_data(country_code):
-    # set paths
-    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
-    
-    pg_lines = extract_pg_data(country_code,'line')
-    pg_points = extract_pg_data(country_code,'point')
-    
     return pg_lines,pg_points
 
 """
