@@ -1,7 +1,9 @@
+import os,sys
+os.environ['USE_PYGEOS'] = '0'
 import geopandas as gpd
 import pandas as pd
 from osgeo import ogr,gdal
-import os,sys
+
 import xarray as xr
 import rasterio
 import numpy as np
@@ -19,8 +21,8 @@ from scipy import integrate
 
 # load from other py files within pg_risk_analysis
 from utils import reproject,set_paths
-from extract import extract_osm_infrastructure,open_pg_data
-from hazard import clip_flood_data
+from extract import extract_osm_infrastructure,extract_pg_infrastructure
+#from hazard import clip_flood_data
 from damage import assess_damage_osm,assess_damage_pg
 
 gdal.SetConfigOption("OSM_CONFIG_FILE", os.path.join('..',"osmconf.ini"))

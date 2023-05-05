@@ -15,11 +15,12 @@ import glob
 from shapely.geometry import mapping
 pd.options.mode.chained_assignment = None
 from rasterio.mask import mask
+from collections.abc import Iterable
 #import rioxarray
 
 # load from other py files within pg_risk_analysis
 from hazard import open_storm_data, open_flood_data
-from utils import overlay_hazard_assets,set_paths
+from utils import overlay_hazard_assets,set_paths,flatten
 
 
 def load_curves_maxdam(vul_curve_path,hazard_type):

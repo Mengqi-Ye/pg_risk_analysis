@@ -2,6 +2,7 @@ import os
 import pygeos
 import pyproj
 import numpy as np
+from collections.abc import Iterable
 
 def set_paths(local=False): # set local=False if run on cluster
 
@@ -29,6 +30,12 @@ def set_paths(local=False): # set local=False if run on cluster
 
     return data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path
 
+def flatten(xs):
+    for x in xs:
+        if isinstance(x, Iterable) and not isinstance(x, (str, bytes)):
+            yield from flatten(x)
+        else:
+            yield x
 
 def reproject(df_ds, current_crs="epsg:4326", approximate_crs="epsg:3857"):
     """
