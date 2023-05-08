@@ -422,8 +422,7 @@ def country_analysis_pg(country_code,hazard_type):
                                     'upper_risk': integrate.simps(y=loss_list_upper[::-1], x=RPS[::-1])
                                     }
                             
-    #return pd.DataFrame(line_risk),pd.DataFrame(plant_risk),pd.DataFrame(substation_risk)
-    return line_risk,plant_risk,substation_risk
+    return pd.DataFrame(line_risk),pd.DataFrame(plant_risk),pd.DataFrame(substation_risk)
 
 
 ##### ##### ##### ##### ##### ##### ##### #####  
@@ -441,11 +440,9 @@ def risk_output(country_code,hazard_type,infra_type):
             climate_models = ['','_CMCC-CM2-VHR4','_CNRM-CM6-1-HR','_EC-Earth3P-HR','_HadGEM3-GC31-HM']
 
             for climate_model in climate_models:
-                
                 if climate_model == '':
                     writer = pd.ExcelWriter(os.path.join(output_path,'risk','{}_{}_{}_{}_risk'.format(country_code,infra_type,hazard_type,'present')+'.xlsx'),
                                             engine='openpyxl')
-                
                 else:
                     writer = pd.ExcelWriter(os.path.join(output_path,'risk','{}_{}_{}{}_risk'.format(country_code,infra_type,hazard_type,climate_model)+'.xlsx'),
                                             engine='openpyxl')
@@ -493,10 +490,12 @@ def risk_output(country_code,hazard_type,infra_type):
             climate_models = ['','_CMCC-CM2-VHR4','_CNRM-CM6-1-HR','_EC-Earth3P-HR','_HadGEM3-GC31-HM']
 
             for climate_model in climate_models:
-
-                # create a Pandas Excel writer using openpyxl engine
-                writer = pd.ExcelWriter(os.path.join(output_path,'risk','{}_{}_{}{}_risk'.format(country_code,infra_type,hazard_type,climate_model)+'.xlsx'),
-                                        engine='openpyxl')
+                if climate_model == '':
+                    writer = pd.ExcelWriter(os.path.join(output_path,'risk','{}_{}_{}_{}_risk'.format(country_code,infra_type,hazard_type,'present')+'.xlsx'),
+                                            engine='openpyxl')
+                else:
+                    writer = pd.ExcelWriter(os.path.join(output_path,'risk','{}_{}_{}{}_risk'.format(country_code,infra_type,hazard_type,climate_model)+'.xlsx'),
+                                            engine='openpyxl')
                 
                 # write each dataframe to a different sheet
                 if len(line_risk) != 0:
