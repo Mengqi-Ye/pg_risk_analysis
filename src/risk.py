@@ -50,7 +50,7 @@ def country_analysis_osm(country_code,hazard_type):
     pole_risk = {}
 
     if hazard_type=='tc':
-        climate_models = [''] #'','_CMCC-CM2-VHR4','_CNRM-CM6-1-HR','_EC-Earth3P-HR','_HadGEM3-GC31-HM'
+        climate_models = ['','_CMCC-CM2-VHR4','_CNRM-CM6-1-HR','_EC-Earth3P-HR','_HadGEM3-GC31-HM']
 
         for i in range(len(osm_damage_infra)):
             for climate_model in climate_models:
@@ -108,7 +108,8 @@ def country_analysis_osm(country_code,hazard_type):
                             loss_list_mean = loss_list.meandam.values.tolist()
                             loss_list_lower = loss_list.lowerdam.values.tolist()
                             loss_list_upper = loss_list.upperdam.values.tolist()
-                            RPS = loss_list.rp.values.tolist()
+                            RPS = loss_list.loc[df['curve'] == curve_code]
+                            RPS = RPS.rp.values.tolist()
                             substation_risk[climate_model,curve_code] = {
                                 'mean_risk': integrate.simps(y=loss_list_mean[::-1], x=RPS[::-1]),
                                 'lower_risk': integrate.simps(y=loss_list_lower[::-1], x=RPS[::-1]),
@@ -128,7 +129,7 @@ def country_analysis_osm(country_code,hazard_type):
                                 loss_list_lower = loss_list.lowerdam.values.tolist()
                                 loss_list_upper = loss_list.upperdam.values.tolist()
                                 RPS = loss_list.loc[df['curve'] == curve_code]
-                                #RPS = RPS.rp.values.tolist()
+                                RPS = RPS.rp.values.tolist()
                                 tower_risk[climate_model,curve_code] = {
                                     'mean_risk': integrate.simps(y=loss_list_mean[::-1], x=RPS[::-1]),
                                     'lower_risk': integrate.simps(y=loss_list_lower[::-1], x=RPS[::-1]),
@@ -146,6 +147,7 @@ def country_analysis_osm(country_code,hazard_type):
                                     loss_list_lower = loss_list.lowerdam.values.tolist()
                                     loss_list_upper = loss_list.upperdam.values.tolist()
                                     RPS = loss_list.loc[df['curve'] == curve_code]
+                                    RPS = RPS.rp.values.tolist()
                                     pole_risk[climate_model,curve_code] = {
                                         'mean_risk': integrate.simps(y=loss_list_mean[::-1], x=RPS[::-1]),
                                         'lower_risk': integrate.simps(y=loss_list_lower[::-1], x=RPS[::-1]),
@@ -202,7 +204,7 @@ def country_analysis_osm(country_code,hazard_type):
                                 loss_list_lower = loss_list.lowerdam.values.tolist()
                                 loss_list_upper = loss_list.upperdam.values.tolist()
                                 RPS = loss_list.loc[df['curve'] == curve_code]
-                                #RPS = RPS.rp.values.tolist()
+                                RPS = RPS.rp.values.tolist()
                                 plant_risk[climate_model,curve_code] = {
                                     'mean_risk': integrate.simps(y=loss_list_mean[::-1], x=RPS[::-1]),
                                     'lower_risk': integrate.simps(y=loss_list_lower[::-1], x=RPS[::-1]),
@@ -219,7 +221,7 @@ def country_analysis_osm(country_code,hazard_type):
                                 loss_list_lower = loss_list.lowerdam.values.tolist()
                                 loss_list_upper = loss_list.upperdam.values.tolist()
                                 RPS = loss_list.loc[df['curve'] == curve_code]
-                                #RPS = RPS.rp.values.tolist()
+                                RPS = RPS.rp.values.tolist()
                                 substation_risk[climate_model,curve_code] = {
                                     'mean_risk': integrate.simps(y=loss_list_mean[::-1], x=RPS[::-1]),
                                     'lower_risk': integrate.simps(y=loss_list_lower[::-1], x=RPS[::-1]),
@@ -238,7 +240,7 @@ def country_analysis_osm(country_code,hazard_type):
                                 loss_list_lower = loss_list.lowerdam.values.tolist()
                                 loss_list_upper = loss_list.upperdam.values.tolist()
                                 RPS = loss_list.loc[df['curve'] == curve_code]
-                                #RPS = RPS.rp.values.tolist()
+                                RPS = RPS.rp.values.tolist()
                                 tower_risk[climate_model,curve_code] = {
                                     'mean_risk': integrate.simps(y=loss_list_mean[::-1], x=RPS[::-1]),
                                     'lower_risk': integrate.simps(y=loss_list_lower[::-1], x=RPS[::-1]),
@@ -255,7 +257,7 @@ def country_analysis_osm(country_code,hazard_type):
                                 loss_list_lower = loss_list.lowerdam.values.tolist()
                                 loss_list_upper = loss_list.upperdam.values.tolist()
                                 RPS = loss_list.loc[df['curve'] == curve_code]
-                                #RPS = RPS.rp.values.tolist()
+                                RPS = RPS.rp.values.tolist()
                                 pole_risk[climate_model,curve_code] = {
                                     'mean_risk': integrate.simps(y=loss_list_mean[::-1], x=RPS[::-1]),
                                     'lower_risk': integrate.simps(y=loss_list_lower[::-1], x=RPS[::-1]),
@@ -292,7 +294,7 @@ def country_analysis_pg(country_code,hazard_type):
     substation_risk = {}
 
     if hazard_type=='tc':
-        climate_models = ['_CMCC-CM2-VHR4','_CNRM-CM6-1-HR'] #'','_CMCC-CM2-VHR4','_CNRM-CM6-1-HR','_EC-Earth3P-HR','_HadGEM3-GC31-HM'
+        climate_models = ['','_CMCC-CM2-VHR4','_CNRM-CM6-1-HR','_EC-Earth3P-HR','_HadGEM3-GC31-HM']
 
         for i in range(len(pg_damage_infra)):
             for climate_model in climate_models:
@@ -397,7 +399,7 @@ def country_analysis_pg(country_code,hazard_type):
                                 loss_list_lower = loss_list.lowerdam.values.tolist()
                                 loss_list_upper = loss_list.upperdam.values.tolist()
                                 RPS = loss_list.loc[df['curve'] == curve_code]
-                                #RPS = RPS.rp.values.tolist()
+                                RPS = RPS.rp.values.tolist()
                                 plant_risk[climate_model,curve_code] = {
                                     'mean_risk': integrate.simps(y=loss_list_mean[::-1], x=RPS[::-1]),
                                     'lower_risk': integrate.simps(y=loss_list_lower[::-1], x=RPS[::-1]),
@@ -414,7 +416,7 @@ def country_analysis_pg(country_code,hazard_type):
                                 loss_list_lower = loss_list.lowerdam.values.tolist()
                                 loss_list_upper = loss_list.upperdam.values.tolist()
                                 RPS = loss_list.loc[df['curve'] == curve_code]
-                                #RPS = RPS.rp.values.tolist()
+                                RPS = RPS.rp.values.tolist()
                                 substation_risk[climate_model,curve_code] = {
                                     'mean_risk': integrate.simps(y=loss_list_mean[::-1], x=RPS[::-1]),
                                     'lower_risk': integrate.simps(y=loss_list_lower[::-1], x=RPS[::-1]),

@@ -137,7 +137,7 @@ def load_storm_data(climate_model,basin,bbox):
         df_ds[25] = np.nan
         df_ds[250] = np.nan
         df_ds = df_ds.reindex(sorted(df_ds.columns), axis=1)
-        df_ds = df_ds.interpolate(method='linear', axis=1, limit_direction='both')
+        df_ds = df_ds.interpolate(method='pchip', axis=1, limit_direction='both')
         df_ds['geometry'] = df_ds_geometry['geometry']
         df_ds = df_ds[[1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 'geometry']]
         
