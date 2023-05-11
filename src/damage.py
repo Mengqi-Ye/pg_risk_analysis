@@ -52,9 +52,7 @@ def load_curves_maxdam(vul_curve_path,hazard_type):
 
     #interpolate the curves to fill missing values
     curves = curves.interpolate()
-    
-    #print(curves)
-   
+       
     return curves,maxdam
 
 def get_damage_per_asset_per_rp(asset,df_ds,assets,curves,maxdam,return_period,country):
@@ -113,7 +111,6 @@ def get_damage_per_asset_per_rp(asset,df_ds,assets,curves,maxdam,return_period,c
         maxdam_asset = maxdam_asset.values#[0]
         only_one = False
 
-    #print(asset[0],asset_type)
     if len(get_hazard_points) == 0:
         if only_one:
             return [return_period,asset[0],curve_name,0,0,0]
@@ -208,40 +205,50 @@ def assess_damage_osm(country_code,osm_power_infra,hazard_type):
 
     if hazard_type=='tc':
         # read wind data
-        climate_models = ['','_CMCC-CM2-VHR4','_CNRM-CM6-1-HR','_EC-Earth3P-HR','_HadGEM3-GC31-HM']
+        climate_models = ['','_CMCC-CM2-VHR4'] #,'_CNRM-CM6-1-HR','_EC-Earth3P-HR','_HadGEM3-GC31-HM'
         df_ds = open_storm_data(country_code)
 
         # remove assets that will not have any damage
         osm_lines = osm_lines.loc[osm_lines.asset != 'cable'].reset_index(drop=True)
         osm_lines['asset'] = osm_lines['asset'].replace(['minor_line'], 'line')
-        osm_poly = osm_poly.loc[osm_poly.asset != 'plant'].reset_index(drop=True)
+        osm_poly = osm_poly.loc[osm_poly.asset != 'plant'].reset_index(drop=True)            
+    
+    elif hazard_type=='fl':
+        # read flood data
+        climate_models = ['historical','rcp8p5']
+        df_ds = open_flood_data(country_code)
         
-        for climate_model in climate_models:
+    for climate_model in climate_models:
+        if hazard_type=='tc':
             return_periods = ['1_1{}'.format(climate_model),'1_2{}'.format(climate_model),'1_5{}'.format(climate_model),'1_10{}'.format(climate_model),
                               '1_25{}'.format(climate_model),'1_50{}'.format(climate_model),'1_100{}'.format(climate_model),
                               '1_250{}'.format(climate_model),'1_500{}'.format(climate_model),'1_1000{}'.format(climate_model)]
+        elif hazard_type == 'fl':
+            return_periods = ['rp0001','rp0002','rp0005','rp0010','rp0025','rp0050','rp0100','rp0250','rp0500','rp1000']     
+    
+        # assess damage for lines
+        overlay_lines = pd.DataFrame(overlay_hazard_assets(df_ds[climate_model],osm_lines).T,
+                                     columns=['asset','hazard_point'])
+
+        if len(overlay_lines) == 0:
+            damaged_lines[climate_model] = pd.DataFrame()
+
+        else:
+            collect_line_damages = []
+            for asset in tqdm(overlay_lines.groupby('asset'),total=len(overlay_lines.asset.unique()),
+                              desc='polyline damage calculation for {} {} ({})'.format(country_code,hazard_type,climate_model)):
+                for return_period in return_periods:
+                    collect_line_damages.append(get_damage_per_asset_per_rp(asset,
+                                                                            df_ds[climate_model],
+                                                                            osm_lines,
+                                                                            curves,
+                                                                            maxdam,
+                                                                            return_period,
+                                                                            country_code))
+
+            get_asset_type_line = dict(zip(osm_lines.index,osm_lines.asset))
             
-            # assess damage for lines
-            overlay_lines = pd.DataFrame(overlay_hazard_assets(df_ds[climate_model],osm_lines).T,
-                                         columns=['asset','hazard_point'])
-
-            if len(overlay_lines) == 0:
-                damaged_lines[climate_model] = pd.DataFrame()
-
-            else:
-                collect_line_damages = []
-                for asset in tqdm(overlay_lines.groupby('asset'),total=len(overlay_lines.asset.unique()),
-                                  desc='polyline damage calculation for {} {} ({})'.format(country_code,hazard_type,climate_model)):
-                    for return_period in return_periods:
-                        collect_line_damages.append(get_damage_per_asset_per_rp(asset,
-                                                                                df_ds[climate_model],
-                                                                                osm_lines,
-                                                                                curves,
-                                                                                maxdam,
-                                                                                return_period,
-                                                                                country_code))
-
-                get_asset_type_line = dict(zip(osm_lines.index,osm_lines.asset))
+            if hazard_type == 'tc':
                 results = pd.DataFrame([item for sublist in collect_line_damages
                                         for item in sublist],columns=['rp','asset','curve','meandam','lowerdam','upperdam'])
 
@@ -249,97 +256,7 @@ def assess_damage_osm(country_code,osm_power_infra,hazard_type):
 
                 damaged_lines[climate_model] = results.groupby(['rp','curve','asset_type']).sum().drop(['asset'], axis=1).reset_index()
 
-            # assess damage for polygons
-            if len(osm_poly) > 0:
-                overlay_poly = pd.DataFrame(overlay_hazard_assets(df_ds[climate_model],osm_poly).T,
-                                        columns=['asset','hazard_point'])
-            else:
-                overlay_poly = pd.DataFrame()
-
-            if len(overlay_poly) == 0:
-                damaged_poly[climate_model] = pd.DataFrame()
-
-            else:
-                collect_poly_damages = []
-                for asset in tqdm(overlay_poly.groupby('asset'),total=len(overlay_poly.asset.unique()),
-                                  desc='polygon damage calculation for {} {} ({})'.format(country_code,hazard_type,climate_model)):
-                    for return_period in return_periods:
-                        collect_poly_damages.append(get_damage_per_asset_per_rp(asset,
-                                                                                df_ds[climate_model],
-                                                                                osm_poly,
-                                                                                curves,
-                                                                                maxdam,
-                                                                                return_period,
-                                                                                country_code))
-
-                get_asset_type_poly = dict(zip(osm_poly.index,osm_poly.asset))
-                
-                results = pd.DataFrame([item for sublist in collect_poly_damages 
-                                        for item in sublist],columns=['rp','asset','curve','meandam','lowerdam','upperdam'])
-
-                results['asset_type'] = results.asset.apply(lambda x : get_asset_type_poly[x])    
-
-                damaged_poly[climate_model] = results.groupby(['rp','curve','asset_type']).sum().drop(['asset'], axis=1).reset_index()
-
-            # assess damage for points
-            overlay_points = pd.DataFrame(overlay_hazard_assets(df_ds[climate_model],osm_points).T,
-                                          columns=['asset','hazard_point'])
-
-            if len(overlay_points) == 0:
-                damaged_points[climate_model] = pd.DataFrame()
-
-            else:
-                collect_point_damages = []
-                for asset in tqdm(overlay_points.groupby('asset'),total=len(overlay_points.asset.unique()),
-                                  desc='point damage calculation for {} {} ({})'.format(country_code,hazard_type,climate_model)):
-                    for return_period in return_periods:
-                        collect_point_damages.append(get_damage_per_asset_per_rp(asset,
-                                                                                df_ds[climate_model],
-                                                                                osm_points,
-                                                                                curves,
-                                                                                maxdam,
-                                                                                return_period,
-                                                                                country_code))
-
-                get_asset_type_point = dict(zip(osm_points.index,osm_points.asset))
-                
-                results = pd.DataFrame([item for sublist in collect_point_damages
-                                        for item in sublist],columns=['rp','asset','curve','meandam','lowerdam','upperdam'])
-
-                results['asset_type'] = results.asset.apply(lambda x : get_asset_type_point[x])    
-
-                damaged_points[climate_model] = results.groupby(['rp','curve','asset_type']).sum().drop(['asset'], axis=1).reset_index()
-
-
-    elif hazard_type=='fl':
-        # read flood data
-        climate_models = ['historical','rcp8p5'] #
-        df_ds = open_flood_data(country_code)
-    
-        for climate_model in climate_models:
-            return_periods = ['rp0001','rp0002','rp0005','rp0010','rp0025','rp0050','rp0100','rp0250','rp0500','rp1000'] 
-
-            # assess damage for lines
-            overlay_lines = pd.DataFrame(overlay_hazard_assets(df_ds[climate_model],osm_lines).T,
-                                         columns=['asset','hazard_point'])
-
-            if len(overlay_lines) == 0:
-                damaged_lines[climate_model] = pd.DataFrame()
-
-            else:
-                collect_line_damages = []
-                for asset in tqdm(overlay_lines.groupby('asset'),total=len(overlay_lines.asset.unique()),
-                                  desc='polyline damage calculation for {} {} ({})'.format(country_code,hazard_type,climate_model)):
-                    for return_period in return_periods:
-                        collect_line_damages.append(get_damage_per_asset_per_rp(asset,
-                                                                                df_ds[climate_model],
-                                                                                osm_lines,
-                                                                                curves,
-                                                                                maxdam,
-                                                                                return_period,
-                                                                                country_code))
-
-                get_asset_type_line = dict(zip(osm_lines.index,osm_lines.asset))
+            elif hazard_type == 'fl':
                 results = pd.DataFrame(collect_line_damages,columns=['rp','asset','curve','meandam','lowerdam','upperdam'])
                 
                 results['asset_type'] = results.asset.apply(lambda x : get_asset_type_line[x])
@@ -349,69 +266,73 @@ def assess_damage_osm(country_code,osm_power_infra,hazard_type):
                 results['asset_type'] = results['asset_type'].replace(['cable', 'minor_line'], 'line')
 
                 damaged_lines[climate_model] = results.groupby(['rp','curve','asset_type']).sum().drop(['asset'], axis=1).reset_index()
+                
+        # assess damage for polygons
+        if len(osm_poly) > 0:
+            overlay_poly = pd.DataFrame(overlay_hazard_assets(df_ds[climate_model],osm_poly).T,
+                                    columns=['asset','hazard_point'])
+        else:
+            overlay_poly = pd.DataFrame()
 
-            # assess damage for polygons
-            if len(osm_poly) > 0:
-                overlay_poly = pd.DataFrame(overlay_hazard_assets(df_ds[climate_model],osm_poly).T,
-                                        columns=['asset','hazard_point'])
-            else:
-                overlay_poly = pd.DataFrame()
+        if len(overlay_poly) == 0:
+            damaged_poly[climate_model] = pd.DataFrame()
 
-            if len(overlay_poly) == 0:
-                damaged_poly[climate_model] = pd.DataFrame()
+        else:
+            collect_poly_damages = []
+            for asset in tqdm(overlay_poly.groupby('asset'),total=len(overlay_poly.asset.unique()),
+                              desc='polygon damage calculation for {} {} ({})'.format(country_code,hazard_type,climate_model)):
+                for return_period in return_periods:
+                    collect_poly_damages.append(get_damage_per_asset_per_rp(asset,
+                                                                            df_ds[climate_model],
+                                                                            osm_poly,
+                                                                            curves,
+                                                                            maxdam,
+                                                                            return_period,
+                                                                            country_code))
 
-            else:
-                collect_poly_damages = []
-                for asset in tqdm(overlay_poly.groupby('asset'),total=len(overlay_poly.asset.unique()),
-                                  desc='polygon damage calculation for {} {} ({})'.format(country_code,hazard_type,climate_model)):
-                    for return_period in return_periods:
-                        collect_poly_damages.append(get_damage_per_asset_per_rp(asset,
-                                                                                df_ds[climate_model],
-                                                                                osm_poly,
-                                                                                curves,
-                                                                                maxdam,
-                                                                                return_period,
-                                                                                country_code))
+            get_asset_type_poly = dict(zip(osm_poly.index,osm_poly.asset))
+            
+            results = pd.DataFrame([item for sublist in collect_poly_damages 
+                                    for item in sublist],columns=['rp','asset','curve','meandam','lowerdam','upperdam'])
 
-                get_asset_type_poly = dict(zip(osm_poly.index,osm_poly.asset))
-                               
-#                results = pd.DataFrame(collect_poly_damages ,columns=['rp','asset','curve','meandam','lowerdam','upperdam'])
-                results = pd.DataFrame([item for sublist in collect_poly_damages 
+            results['asset_type'] = results.asset.apply(lambda x : get_asset_type_poly[x])    
+
+            damaged_poly[climate_model] = results.groupby(['rp','curve','asset_type']).sum().drop(['asset'], axis=1).reset_index()
+                
+
+        #assess damage for points
+        overlay_points = pd.DataFrame(overlay_hazard_assets(df_ds[climate_model],osm_points).T,
+                                      columns=['asset','hazard_point'])
+
+        if len(overlay_points) == 0:
+            damaged_points[climate_model] = pd.DataFrame()
+
+        else:
+            collect_point_damages = []
+            for asset in tqdm(overlay_points.groupby('asset'),total=len(overlay_points.asset.unique()),
+                              desc='point damage calculation for {} {} ({})'.format(country_code,hazard_type,climate_model)):
+                for return_period in return_periods:
+                    collect_point_damages.append(get_damage_per_asset_per_rp(asset,
+                                                                            df_ds[climate_model],
+                                                                            osm_points,
+                                                                            curves,
+                                                                            maxdam,
+                                                                            return_period,
+                                                                            country_code))
+
+            get_asset_type_point = dict(zip(osm_points.index,osm_points.asset))
+            
+            if hazard_type == 'tc':
+                results = pd.DataFrame([item for sublist in collect_point_damages
                                         for item in sublist],columns=['rp','asset','curve','meandam','lowerdam','upperdam'])
+                results['asset_type'] = results.asset.apply(lambda x : get_asset_type_point[x])    
                 
-                results['asset_type'] = results.asset.apply(lambda x : get_asset_type_poly[x])    
-
-                damaged_poly[climate_model] = results.groupby(['rp','curve','asset_type']).sum().drop(['asset'], axis=1).reset_index()
-
-            # assess damage for points
-            overlay_points = pd.DataFrame(overlay_hazard_assets(df_ds[climate_model],osm_points).T,
-                                          columns=['asset','hazard_point'])
-
-            if len(overlay_points) == 0:
-                damaged_points[climate_model] = pd.DataFrame()
-
-            else:
-                collect_point_damages = []
-                for asset in tqdm(overlay_points.groupby('asset'),total=len(overlay_points.asset.unique()),
-                                  desc='point damage calculation for {} {} ({})'.format(country_code,hazard_type,climate_model)):
-                    for return_period in return_periods:
-                        collect_point_damages.append(get_damage_per_asset_per_rp(asset,
-                                                                                df_ds[climate_model],
-                                                                                osm_points,
-                                                                                curves,
-                                                                                maxdam,
-                                                                                return_period,
-                                                                                country_code))
-
-                get_asset_type_point = dict(zip(osm_points.index,osm_points.asset))
-                
-               
-                #results = pd.DataFrame(collect_point_damages ,columns=['rp','asset','curve','meandam','lowerdam','upperdam'])
-                
+                damaged_points[climate_model] = results.groupby(['rp','curve','asset_type']).sum().drop(['asset'], axis=1).reset_index()
+            
+            elif hazard_type == 'fl':
                 results = pd.DataFrame(np.array(list(flatten(collect_point_damages))).reshape(
                     int(len(list(flatten(collect_point_damages)))/6), 6),
                                        columns=['rp','asset','curve','meandam','lowerdam','upperdam'])
-                
                 results['asset'] = results['asset'].astype(int)
                 results[['meandam','lowerdam','upperdam']] = results[['meandam','lowerdam','upperdam']].astype(float)
                 

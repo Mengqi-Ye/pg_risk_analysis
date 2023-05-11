@@ -31,7 +31,6 @@ def clip_flood_data(country_code):
     geometry = ne_countries.loc[ne_countries['ISO_A3']==country_code].geometry.values[0]
     geoms = [mapping(geometry)]
     
-    #climate_model: historical, rcp4p5, rcp8p5; time_period: hist, 2030, 2050, 2080
     rps = ['0001','0002','0005','0010','0025','0050','0100','0250','0500','1000']
     climate_models = ['historical','rcp8p5']
     

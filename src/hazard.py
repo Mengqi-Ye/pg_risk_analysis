@@ -26,6 +26,71 @@ gdal.SetConfigOption("OSM_CONFIG_FILE", os.path.join('..',"osmconf.ini"))
 ##### ##### ##### STORM DATA  ##### ##### ##### 
 ##### ##### ##### ##### ##### ##### ##### #####  
 
+def load_storm_data(climate_model,basin,bbox):
+    """
+    Load storm data from a NetCDF file and process it to return a pandas DataFrame.
+
+    Parameters:
+    - climate_model (str): name of the climate model
+    - basin (str): name of the basin
+    - bbox (tuple): bounding box coordinates in the format (minx, miny, maxx, maxy)
+    - ne_crs (str): CRS string of the North-East projection
+
+    Returns:
+    - df_ds (pd.DataFrame): pandas DataFrame with interpolated wind speeds for different return periods and geometry column
+    """
+    # set paths
+    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
+
+    filename = os.path.join(tc_path, f'STORM_FIXED_RETURN_PERIODS{climate_model}_{basin}.nc')
+    
+    # load data from NetCDF file
+    with xr.open_dataset(filename) as ds:
+        
+        # convert data to WGS84 CRS
+        ds.rio.write_crs(4326, inplace=True)
+        ds = ds.rio.clip_box(minx=bbox[0], miny=bbox[1], maxx=bbox[2], maxy=bbox[3])
+        
+        #convert 10-min sustained wind speed to 3-s gust wind speed
+        ds['mean_3s'] = ds['mean']/0.88*1.11
+
+        # get the mean values
+        df_ds = ds['mean_3s'].to_dataframe().unstack(level=2).reset_index()
+
+        # create geometry values and drop lat lon columns
+        df_ds['geometry'] = [pygeos.points(x) for x in list(zip(df_ds['lon'], df_ds['lat']))]
+        df_ds = df_ds.drop(['lat', 'lon'], axis=1, level=0)
+        
+        # interpolate wind speeds of 1,2,5,25,and 250-yr return period
+        ## rename columns to return periods (must be integer for interpolating)
+        df_ds_geometry = pd.DataFrame()
+        df_ds_geometry['geometry'] = df_ds['geometry']
+        df_ds = df_ds.drop(['geometry'], axis=1, level=0)
+        df_ds = df_ds['mean_3s']
+        df_ds.columns = [int(x) for x in ds['mean_3s']['rp']]
+        df_ds[1] = np.nan
+        df_ds[2] = np.nan
+        df_ds[5] = np.nan
+        df_ds[25] = np.nan
+        df_ds[250] = np.nan
+        df_ds = df_ds.reindex(sorted(df_ds.columns), axis=1)
+        df_ds = df_ds.interpolate(method='pchip', axis=1, limit_direction='both')
+        df_ds['geometry'] = df_ds_geometry['geometry']
+        df_ds = df_ds[[1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 'geometry']]
+        
+        # rename columns to return periods
+        df_ds.columns = ['1_{}{}'.format(int(x), climate_model) for x in [1, 2, 5, 10, 25, 50, 100, 250, 500, 1000]] +['geometry']
+        df_ds['geometry'] = pygeos.buffer(df_ds.geometry, radius=0.1/2, cap_style='square').values
+        
+        # reproject the geometry column to the specified CRS
+        df_ds['geometry'] = reproject(df_ds)
+            
+        # drop all non values to reduce size
+        #df_ds = df_ds.loc[~df_ds['1_10000{}'.format(climate_model)].isna()].reset_index(drop=True)
+        df_ds = df_ds.fillna(0)
+
+    return df_ds
+
 def open_storm_data(country_code):
     """
     This function loads STORM data for a given country code, clips it based on the country geometry,
@@ -91,69 +156,7 @@ def open_storm_data(country_code):
 
     return df_ds
 
-def load_storm_data(climate_model,basin,bbox):
-    """
-    Load storm data from a NetCDF file and process it to return a pandas DataFrame.
 
-    Parameters:
-    - climate_model (str): name of the climate model
-    - basin (str): name of the basin
-    - bbox (tuple): bounding box coordinates in the format (minx, miny, maxx, maxy)
-    - ne_crs (str): CRS string of the North-East projection
-
-    Returns:
-    - df_ds (pd.DataFrame): pandas DataFrame with interpolated wind speeds for different return periods and geometry column
-    """
-    # set paths
-    data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
-
-    filename = os.path.join(tc_path, f'STORM_FIXED_RETURN_PERIODS{climate_model}_{basin}.nc')
-    
-    # load data from NetCDF file
-    with xr.open_dataset(filename) as ds:
-        
-        # convert data to WGS84 CRS
-        ds.rio.write_crs(4326, inplace=True)
-        ds = ds.rio.clip_box(minx=bbox[0], miny=bbox[1], maxx=bbox[2], maxy=bbox[3])
-        ds['mean_3s'] = ds['mean']/0.88*1.11 #convert 10-min sustained wind speed to 3-s gust wind speed
-
-        # get the mean values
-        df_ds = ds['mean_3s'].to_dataframe().unstack(level=2).reset_index()
-
-        # create geometry values and drop lat lon columns
-        df_ds['geometry'] = [pygeos.points(x) for x in list(zip(df_ds['lon'], df_ds['lat']))]
-        df_ds = df_ds.drop(['lat', 'lon'], axis=1, level=0)
-        
-        # interpolate wind speeds of 1,2,5,25,and 250-yr return period
-        ## rename columns to return periods (must be integer for interpolating)
-        df_ds_geometry = pd.DataFrame()
-        df_ds_geometry['geometry'] = df_ds['geometry']
-        df_ds = df_ds.drop(['geometry'], axis=1, level=0)
-        df_ds = df_ds['mean_3s']
-        df_ds.columns = [int(x) for x in ds['mean_3s']['rp']]
-        df_ds[1] = np.nan
-        df_ds[2] = np.nan
-        df_ds[5] = np.nan
-        df_ds[25] = np.nan
-        df_ds[250] = np.nan
-        df_ds = df_ds.reindex(sorted(df_ds.columns), axis=1)
-        df_ds = df_ds.interpolate(method='pchip', axis=1, limit_direction='both')
-        df_ds['geometry'] = df_ds_geometry['geometry']
-        df_ds = df_ds[[1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 'geometry']]
-        
-        
-        # rename columns to return periods
-        df_ds.columns = ['1_{}{}'.format(int(x), climate_model) for x in [1, 2, 5, 10, 25, 50, 100, 250, 500, 1000]] +['geometry']     
-        df_ds['geometry'] = pygeos.buffer(df_ds.geometry, radius=0.1/2, cap_style='square').values
-
-        # reproject the geometry column to the specified CRS
-        df_ds['geometry'] = reproject(df_ds)
-            
-        # drop all non values to reduce size
-        df_ds = df_ds.fillna(0)
-
-
-    return df_ds
 
 ##### ##### ##### ##### ##### ##### ##### #####  
 ##### ##### ##### FLOOD DATA  ##### ##### ##### 
@@ -181,7 +184,7 @@ def load_flood_data(country_code,climate_model):
                 df_ds = df_ds.drop(['band','x', 'y','spatial_ref'], axis=1)
                 df_ds = df_ds.dropna()
                 df_ds = df_ds.reset_index(drop=True)
-                df_ds.geometry= pygeos.buffer(df_ds.geometry,radius=0.00833/2,cap_style='square').values  #?????????????????????????
+                df_ds.geometry= pygeos.buffer(df_ds.geometry,radius=0.0089932/2,cap_style='square').values  # the original value here is 0.00833???
                 df_ds['geometry'] = reproject(df_ds)
                 collect_df_ds.append(df_ds)
 
