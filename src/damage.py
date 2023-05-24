@@ -23,7 +23,7 @@ from hazard import open_storm_data, open_flood_data
 from utils import overlay_hazard_assets,set_paths,flatten
 
 
-def load_curves_maxdam(vul_curve_path,hazard_type):
+def load_curves_maxdam(country_code,vul_curve_path,hazard_type):
     """[summary]
 
     Args:
@@ -32,6 +32,46 @@ def load_curves_maxdam(vul_curve_path,hazard_type):
     Returns:
         [type]: [description]
     """
+    
+    # dictionary of GDP per capita ratio for each country
+    gdp_ratio = {
+        "BRN": {
+            "ratio_usa": 0.5201},
+        "KHM": {
+            "ratio_usa": 0.0240},
+        "CHN": {
+            "ratio_usa": 0.1772},
+        "IDN": {
+            "ratio_usa": 0.0647},
+        "JPN": {
+            "ratio_usa": 0.5912},
+        "LAO": {
+            "ratio_usa": 0.0434},
+        "MYS": {
+            "ratio_usa": 0.1775},
+        "MNG": {
+            "ratio_usa": 0.0703},
+        "MMR": {
+            "ratio_usa": 0.0276},
+        "PRK": {
+            "ratio_usa": 0.0106},
+        "PHL": {
+            "ratio_usa": 0.0547},
+        "SGP": {
+            "ratio_usa": 1.0091},
+        "KOR": {
+            "ratio_usa": 0.5367},
+        "TWN": {
+            "ratio_usa": 0.4888},
+        "THA": {
+            "ratio_usa": 0.1034},
+        "VNM": {
+            "ratio_usa": 0.0573},
+        "HKG": {
+            "ratio_usa": 0.7091},
+        "MAC": {
+            "ratio_usa": 0.5913}
+    }
 
     if hazard_type == 'tc':
         sheet_name = 'wind_curves'
@@ -40,21 +80,33 @@ def load_curves_maxdam(vul_curve_path,hazard_type):
         sheet_name = 'flooding_curves'
     
     # load curves and maximum damages as separate inputs
-    curves = pd.read_excel(vul_curve_path,sheet_name=sheet_name,skiprows=10,index_col=[0])
-
-    maxdam = pd.read_excel(vul_curve_path,sheet_name=sheet_name,index_col=[0],header=[0,1]).iloc[:7]
+    curves = pd.read_excel(vul_curve_path,sheet_name=sheet_name,skiprows=11,index_col=[0])
+    
+    maxdam = pd.read_excel(vul_curve_path,sheet_name=sheet_name,index_col=[0],header=[0,1]).iloc[:8]
     maxdam = maxdam.rename({'substation_point':'substation'},level=0,axis=1)
 
     curves.columns = maxdam.columns
         
     #transpose maxdam so its easier work with the dataframe
     maxdam = maxdam.T
+    
+    ratio_usa = gdp_ratio.get(country_code, {}).get("ratio_usa", None)
+
+    if ratio_usa is not None:
+        print(f"The ratio_usa for {country_code} is {ratio_usa}")
+    else:
+        print(f"No ratio_usa found for {country_code}")
+        
+    maxdam['MaxDam'] = maxdam['MaxDam'] * ratio_usa
+    maxdam['LowerDam'] = maxdam['LowerDam'] * ratio_usa
+    maxdam['UpperDam'] = maxdam['UpperDam'] * ratio_usa
 
     #interpolate the curves to fill missing values
     curves = curves.interpolate()
        
     return curves,maxdam
-
+    
+    
 def get_damage_per_asset_per_rp(asset,df_ds,assets,curves,maxdam,return_period,country):
     """
     Calculates the damage per asset per return period based on asset type, hazard curves and maximum damage
@@ -69,14 +121,14 @@ def get_damage_per_asset_per_rp(asset,df_ds,assets,curves,maxdam,return_period,c
         country (str): The country for which the damage should be calculated
 
     Returns:
-        list or tuple: Depending on the input, the function either returns a list of tuples with the asset index, the curve name and the calculated damage, or a tuple with None, None, None if no hazard points are found
+        list or tuple: Depending on the input, the function either returns a list of tuples with the asset index, the curve name and the calculated damage, or a tuple with None,
+        None, None if no hazard points are found
     """
     
     # find the exact hazard overlays:
     get_hazard_points = df_ds.iloc[asset[1]['hazard_point'].values].reset_index()
     get_hazard_points = get_hazard_points.loc[pygeos.intersects(get_hazard_points.geometry.values,assets.iloc[asset[0]].geometry)]
 
-    
     asset_type = assets.iloc[asset[0]].asset
     asset_geom = assets.iloc[asset[0]].geometry
 
@@ -94,7 +146,6 @@ def get_damage_per_asset_per_rp(asset,df_ds,assets,curves,maxdam,return_period,c
         maxdam_asset = maxdam.loc[asset_type].MaxDam
         lowerdam_asset = maxdam.loc[asset_type].LowerDam
         upperdam_asset = maxdam.loc[asset_type].UpperDam
-
 
     hazard_intensity = curves[asset_type].index.values
     
@@ -187,12 +238,12 @@ def get_damage_per_asset_per_rp(asset,df_ds,assets,curves,maxdam,return_period,c
 ##### ##### ##### ##### ##### ##### ##### #####  
 ##### ##### ##### OSM DAMAGE  ##### ##### ##### 
 ##### ##### ##### ##### ##### ##### ##### #####
-def assess_damage_osm(country_code,osm_power_infra,hazard_type):
+def assess_damage_osm(country_code,osm_power_infra,hazard_type): #NEW VERSION
     # set paths
     data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
 
     # load curves and maxdam
-    curves,maxdam = load_curves_maxdam(vul_curve_path,hazard_type)
+    curves,maxdam = load_curves_maxdam(country_code,vul_curve_path,hazard_type)
     
     # read infrastructure data:
     osm_lines,osm_poly,osm_points = osm_power_infra
@@ -216,7 +267,8 @@ def assess_damage_osm(country_code,osm_power_infra,hazard_type):
     elif hazard_type=='fl':
         # read flood data
         climate_models = ['historical','rcp8p5']
-        df_ds = open_flood_data(country_code)
+        #df_ds = open_flood_data(country_code) #revise after test!!!!!!!!!!!!
+        df_ds = phl_flood
         
     for climate_model in climate_models:
         if hazard_type=='tc':
@@ -257,7 +309,12 @@ def assess_damage_osm(country_code,osm_power_infra,hazard_type):
                 damaged_lines[climate_model] = results.groupby(['rp','curve','asset_type']).sum().drop(['asset'], axis=1).reset_index()
 
             elif hazard_type == 'fl':
-                results = pd.DataFrame(collect_line_damages,columns=['rp','asset','curve','meandam','lowerdam','upperdam'])
+                #results = pd.DataFrame(collect_line_damages,columns=['rp','asset','curve','meandam','lowerdam','upperdam'])
+                results = pd.DataFrame(np.array(list(flatten(collect_line_damages))).reshape(
+                    int(len(list(flatten(collect_line_damages)))/6), 6),
+                                       columns=['rp','asset','curve','meandam','lowerdam','upperdam'])
+                results['asset'] = results['asset'].astype(int)
+                results[['meandam','lowerdam','upperdam']] = results[['meandam','lowerdam','upperdam']].astype(float)
                 
                 results['asset_type'] = results.asset.apply(lambda x : get_asset_type_line[x])
 
