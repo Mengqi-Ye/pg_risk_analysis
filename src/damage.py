@@ -256,7 +256,7 @@ def assess_damage_osm(country_code,osm_power_infra,hazard_type): #NEW VERSION
 
     if hazard_type=='tc':
         # read wind data
-        climate_models = ['','_CMCC-CM2-VHR4'] #,'_CNRM-CM6-1-HR','_EC-Earth3P-HR','_HadGEM3-GC31-HM'
+        climate_models = ['','_CMCC-CM2-VHR4','_CNRM-CM6-1-HR','_EC-Earth3P-HR','_HadGEM3-GC31-HM']
         df_ds = open_storm_data(country_code)
 
         # remove assets that will not have any damage
@@ -267,8 +267,7 @@ def assess_damage_osm(country_code,osm_power_infra,hazard_type): #NEW VERSION
     elif hazard_type=='fl':
         # read flood data
         climate_models = ['historical','rcp8p5']
-        #df_ds = open_flood_data(country_code) #revise after test!!!!!!!!!!!!
-        df_ds = phl_flood
+        df_ds = open_flood_data(country_code)
         
     for climate_model in climate_models:
         if hazard_type=='tc':

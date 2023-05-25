@@ -100,7 +100,12 @@ def overlay_hazard_assets(df_ds, assets):
             the assets. If the assets have a 'buffered' column, the buffered geometries are used for the overlay.
     """
     hazard_tree = pygeos.STRtree(df_ds.geometry.values)
-    if (pygeos.get_type_id(assets.iloc[0].geometry) == 3) | (pygeos.get_type_id(assets.iloc[0].geometry) == 6):
-        return  hazard_tree.query_bulk(assets.geometry,predicate='intersects')    
+    #if (pygeos.get_type_id(assets.iloc[0].geometry) == 3) | (pygeos.get_type_id(assets.iloc[0].geometry) == 6):
+    if len(assets) > 0:
+        if (pygeos.get_type_id(assets.iloc[0].geometry) == 3) or (pygeos.get_type_id(assets.iloc[0].geometry) == 6):
+            return hazard_tree.query_bulk(assets.geometry,predicate='intersects')    
+        else:
+            return hazard_tree.query_bulk(assets.buffered,predicate='intersects')
+    
     else:
-        return  hazard_tree.query_bulk(assets.buffered,predicate='intersects')
+        return hazard_tree.query_bulk(assets.buffered,predicate='intersects')
