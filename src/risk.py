@@ -451,18 +451,15 @@ def risk_output(country_code,hazard_type,infra_type):
 
         # save the Excel file
         if writer.sheets:
-            # 至少存在一个工作表
             writer.save()
-        else:
-            # 不存在工作表，输出空表
-            sheet_names = ['line_risk', 'plant_risk', 'substation_risk', 'tower_risk', 'pole_risk']
 
-            # 创建 5 个带有特定名称的空工作表
-            for sheet_name in sheet_names:
-                df = pd.DataFrame()
-                df.to_excel(writer, sheet_name=sheet_name, index=False)
+        else:
+            df = pd.DataFrame()
+            df.loc[1:3, 0] = ['mean_risk', 'lower_risk', 'upper_risk']
+
+            writer = pd.ExcelWriter(os.path.join(output_path,'risk','{}_{}_{}_{}_risk'.format(country_code,infra_type,hazard_type,climate_model)+'.xlsx'))
+            df.to_excel(writer,sheet_name='line_risk', index=False)
             writer.save()
-        #writer.save()
             
 
 if __name__ == "__main__":
