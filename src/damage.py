@@ -32,7 +32,8 @@ def load_curves_maxdam(country_code,vul_curve_path,hazard_type):
     Returns:
         [type]: [description]
     """
-    
+    #load curves with GDP correction
+    """
     # dictionary of GDP per capita ratio for each country
     gdp_ratio = {
         "BRN": {
@@ -72,7 +73,7 @@ def load_curves_maxdam(country_code,vul_curve_path,hazard_type):
         "MAC": {
             "ratio_usa": 0.5913}
     }
-
+    
     if hazard_type == 'tc':
         sheet_name = 'wind_curves'
     
@@ -103,7 +104,28 @@ def load_curves_maxdam(country_code,vul_curve_path,hazard_type):
 
     #interpolate the curves to fill missing values
     curves = curves.interpolate()
-       
+    """
+    #load curves without GDP correction
+    if hazard_type == 'tc':
+        sheet_name = 'wind_curves'
+    
+    elif hazard_type == 'fl':
+        sheet_name = 'flooding_curves'
+    
+    # load curves and maximum damages as separate inputs
+    curves = pd.read_excel(vul_curve_path,sheet_name=sheet_name,skiprows=11,index_col=[0])
+    
+    maxdam = pd.read_excel(vul_curve_path,sheet_name=sheet_name,index_col=[0],header=[0,1]).iloc[:8]
+    maxdam = maxdam.rename({'substation_point':'substation'},level=0,axis=1)
+
+    curves.columns = maxdam.columns
+        
+    #transpose maxdam so its easier work with the dataframe
+    maxdam = maxdam.T
+
+    #interpolate the curves to fill missing values
+    curves = curves.interpolate()
+    
     return curves,maxdam
     
     
