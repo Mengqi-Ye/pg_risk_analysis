@@ -35,96 +35,55 @@ def load_curves_maxdam(country_code,vul_curve_path,hazard_type):
     
     # dictionary of GDP per capita ratio for each country
     gdp_ratio = {
-        "BRN": {
-            "ratio_usa": 0.5201},
-        "KHM": {
-            "ratio_usa": 0.0240},
-        "CHN": {
-            "ratio_usa": 0.1772},
-        "IDN": {
-            "ratio_usa": 0.0647},
-        "JPN": {
-            "ratio_usa": 0.5912},
-        "LAO": {
-            "ratio_usa": 0.0434},
-        "MYS": {
-            "ratio_usa": 0.1775},
-        "MNG": {
-            "ratio_usa": 0.0703},
-        "MMR": {
-            "ratio_usa": 0.0276},
-        "PRK": {
-            "ratio_usa": 0.0106},
-        "PHL": {
-            "ratio_usa": 0.0547},
-        "SGP": {
-            "ratio_usa": 1.0091},
-        "KOR": {
-            "ratio_usa": 0.5367},
-        "TWN": {
-            "ratio_usa": 0.4888},
-        "THA": {
-            "ratio_usa": 0.1034},
-        "VNM": {
-            "ratio_usa": 0.0573},
-        "HKG": {
-            "ratio_usa": 0.7091},
-        "MAC": {
-            "ratio_usa": 0.5913}
-    }
+        "BRN": {"ratio_usa": 0.5201},
+        "KHM": {"ratio_usa": 0.0240},
+        "CHN": {"ratio_usa": 0.1772},
+        "IDN": {"ratio_usa": 0.0647},
+        "JPN": {"ratio_usa": 0.5912},
+        "LAO": {"ratio_usa": 0.0434},
+        "MYS": {"ratio_usa": 0.1775},
+        "MNG": {"ratio_usa": 0.0703},
+        "MMR": {"ratio_usa": 0.0276},
+        "PRK": {"ratio_usa": 0.0106},
+        "PHL": {"ratio_usa": 0.0547},
+        "SGP": {"ratio_usa": 1.0091},
+        "KOR": {"ratio_usa": 0.5367},
+        "TWN": {"ratio_usa": 0.4888},
+        "THA": {"ratio_usa": 0.1034},
+        "VNM": {"ratio_usa": 0.0573},
+        "HKG": {"ratio_usa": 0.7091},
+        "MAC": {"ratio_usa": 0.5913}}
     
     if hazard_type == 'tc':
         sheet_name = 'wind_curves'
         
         # dictionary of design wind speeds for each country
-        design_wind_speed = { #REVISE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            "BRN": {
-                "dws": 0.5201},
-            "KHM": {
-                "dws": 0.0240},
-            "CHN": {
-                "dws": 0.1772},
-            "IDN": {
-                "dws": 0.0647},
-            "JPN": {
-                "dws": 0.5912},
-            "LAO": {
-                "dws": 0.0434},
-            "MYS": {
-                "dws": 0.1775},
-            "MNG": {
-                "dws": 0.0703},
-            "MMR": {
-                "dws": 0.0276},
-            "PRK": {
-                "dws": 0.0106},
-            "PHL": {
-                "dws": 0.0547},
-            "SGP": {
-                "dws": 1.0091},
-            "KOR": {
-                "dws": 0.5367},
-            "TWN": {
-                "dws": 0.4888},
-            "THA": {
-                "dws": 0.1034},
-            "VNM": {
-                "dws": 0.0573},
-            "HKG": {
-                "dws": 0.7091},
-            "MAC": {
-                "dws": 0.5913}
-        }
+        design_wind_speed = {
+            "BRN": {"dws": 32},
+            "KHM": {"dws": 32},
+            "CHN": {"dws": 52},
+            "IDN": {"dws": 32},
+            "JPN": {"dws": 52},
+            "LAO": {"dws": 32},
+            "MYS": {"dws": 32},
+            "MNG": {"dws": 0},
+            "MMR": {"dws": 39},
+            "PRK": {"dws": 39},
+            "PHL": {"dws": 52},
+            "SGP": {"dws": 32},
+            "KOR": {"dws": 52},
+            "TWN": {"dws": 60},
+            "THA": {"dws": 39},
+            "VNM": {"dws": 44}}
         
         curves = pd.read_excel(vul_curve_path,sheet_name=sheet_name,skiprows=11)
         
         dws = design_wind_speed.get(country_code, {}).get("dws", None)
-        scaling_factor = dws / 50 #shift design wind speed of all curves to 50 m/s
+        scaling_factor = dws / 60 #shift design wind speed of all curves to 60 m/s
 
         curves = curves.apply(lambda x: x * scaling_factor if pd.api.types.is_numeric_dtype(x) else x)
         
         curves = curves.set_index('Wind speed (m/s)')
-        print(curves)
         
     elif hazard_type == 'fl':
         sheet_name = 'flooding_curves'    
@@ -136,6 +95,10 @@ def load_curves_maxdam(country_code,vul_curve_path,hazard_type):
     #maxdam = maxdam.rename({'substation_point':'substation'},level=0,axis=1)        
         
     curves.columns = maxdam.columns
+    
+    #interpolate the curves to fill missing values
+    curves = curves.interpolate()
+    print(curves.tail(10))
     
     #transpose maxdam so its easier work with the dataframe
     maxdam = maxdam.T
@@ -151,9 +114,6 @@ def load_curves_maxdam(country_code,vul_curve_path,hazard_type):
     maxdam['LowerDam'] = maxdam['LowerDam'] * ratio_usa
     maxdam['UpperDam'] = maxdam['UpperDam'] * ratio_usa
 
-    #interpolate the curves to fill missing values
-    curves = curves.interpolate()
-       
     return curves,maxdam
     
     
@@ -297,7 +257,6 @@ def assess_damage_osm(country_code,osm_power_infra,hazard_type): #NEW VERSION
     
     # read infrastructure data:
     osm_lines,osm_poly,osm_points = osm_power_infra
-    #print(osm_lines['asset'].unique())
     
     #calculate damaged lines/polygons/points in loop by climate_model
     damaged_lines = {}
