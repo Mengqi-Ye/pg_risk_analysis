@@ -124,6 +124,7 @@ def load_curves_maxdam(country_code,vul_curve_path,hazard_type):
         curves = curves.apply(lambda x: x * scaling_factor if pd.api.types.is_numeric_dtype(x) else x)
         
         curves = curves.set_index('Wind speed (m/s)')
+        print(curves)
         
     elif hazard_type == 'fl':
         sheet_name = 'flooding_curves'    

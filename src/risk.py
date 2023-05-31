@@ -437,12 +437,16 @@ def risk_output(country_code,hazard_type,infra_type):
         line_risk,plant_risk,substation_risk = country_analysis_pg(country_code,hazard_type)
             
     for climate_model in climate_models:
-        if climate_model == '':
-            writer = pd.ExcelWriter(os.path.join(output_path,'risk','{}_{}_{}_{}_risk'.format(country_code,infra_type,hazard_type,'present')+'.xlsx'),
-                                    engine='openpyxl')
-        else:
+        if hazard_type == 'tc':
+            if climate_model == '':
+                writer = pd.ExcelWriter(os.path.join(output_path,'risk','{}_{}_{}_{}_risk'.format(country_code,infra_type,hazard_type,'present')+'.xlsx'),
+                                        engine='openpyxl')
+            else:
+                writer = pd.ExcelWriter(os.path.join(output_path,'risk','{}_{}_{}{}_risk'.format(country_code,infra_type,hazard_type,climate_model)+'.xlsx'),
+                                        engine='openpyxl')
+        elif hazard_type == 'fl':
             writer = pd.ExcelWriter(os.path.join(output_path,'risk','{}_{}_{}_{}_risk'.format(country_code,infra_type,hazard_type,climate_model)+'.xlsx'),
-                                    engine='openpyxl')
+                                        engine='openpyxl')
 
         # write each dataframe to a different sheet
         if len(line_risk) != 0:
@@ -464,7 +468,17 @@ def risk_output(country_code,hazard_type,infra_type):
             df = pd.DataFrame()
             df.loc[1:3, 0] = ['mean_risk', 'lower_risk', 'upper_risk']
 
-            writer = pd.ExcelWriter(os.path.join(output_path,'risk','{}_{}_{}_{}_risk'.format(country_code,infra_type,hazard_type,climate_model)+'.xlsx'))
+            if hazard_type == 'tc':
+                if climate_model == '':
+                    writer = pd.ExcelWriter(os.path.join(output_path,'risk','{}_{}_{}_{}_risk'.format(country_code,infra_type,hazard_type,'present')+'.xlsx'),
+                                            engine='openpyxl')
+                else:
+                    writer = pd.ExcelWriter(os.path.join(output_path,'risk','{}_{}_{}{}_risk'.format(country_code,infra_type,hazard_type,climate_model)+'.xlsx'),
+                                            engine='openpyxl')
+            elif hazard_type == 'fl':
+                writer = pd.ExcelWriter(os.path.join(output_path,'risk','{}_{}_{}_{}_risk'.format(country_code,infra_type,hazard_type,climate_model)+'.xlsx'),
+                                            engine='openpyxl')
+
             df.to_excel(writer,sheet_name='line_risk', index=False)
             writer.save()
             

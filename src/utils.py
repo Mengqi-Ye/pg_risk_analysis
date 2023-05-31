@@ -26,6 +26,7 @@ def set_paths(local=False): # set local=False if run on cluster
         vul_curve_path = os.path.join('/scistor/ivm/mye500/data/pg_risk_analysis/vulnerability_curves','input_vulnerability_data.xlsx')
         #output_path = os.path.join('C:\\','projects','pg_risk_analysis','output')
         output_path = os.path.join("/scistor/ivm/mye500/projects/pg_risk_analysis/output")
+        
         ne_path = os.path.join(data_path,"natural_earth","ne_10m_admin_0_countries.shp")
 
     return data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path
