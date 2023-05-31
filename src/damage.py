@@ -32,8 +32,7 @@ def load_curves_maxdam(country_code,vul_curve_path,hazard_type):
     Returns:
         [type]: [description]
     """
-    #load curves with GDP correction
-    """
+    
     # dictionary of GDP per capita ratio for each country
     gdp_ratio = {
         "BRN": {
@@ -76,18 +75,67 @@ def load_curves_maxdam(country_code,vul_curve_path,hazard_type):
     
     if hazard_type == 'tc':
         sheet_name = 'wind_curves'
-    
-    elif hazard_type == 'fl':
-        sheet_name = 'flooding_curves'
-    
-    # load curves and maximum damages as separate inputs
-    curves = pd.read_excel(vul_curve_path,sheet_name=sheet_name,skiprows=11,index_col=[0])
-    
-    maxdam = pd.read_excel(vul_curve_path,sheet_name=sheet_name,index_col=[0],header=[0,1]).iloc[:8]
-    maxdam = maxdam.rename({'substation_point':'substation'},level=0,axis=1)
-
-    curves.columns = maxdam.columns
         
+        # dictionary of design wind speeds for each country
+        design_wind_speed = { #REVISE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            "BRN": {
+                "dws": 0.5201},
+            "KHM": {
+                "dws": 0.0240},
+            "CHN": {
+                "dws": 0.1772},
+            "IDN": {
+                "dws": 0.0647},
+            "JPN": {
+                "dws": 0.5912},
+            "LAO": {
+                "dws": 0.0434},
+            "MYS": {
+                "dws": 0.1775},
+            "MNG": {
+                "dws": 0.0703},
+            "MMR": {
+                "dws": 0.0276},
+            "PRK": {
+                "dws": 0.0106},
+            "PHL": {
+                "dws": 0.0547},
+            "SGP": {
+                "dws": 1.0091},
+            "KOR": {
+                "dws": 0.5367},
+            "TWN": {
+                "dws": 0.4888},
+            "THA": {
+                "dws": 0.1034},
+            "VNM": {
+                "dws": 0.0573},
+            "HKG": {
+                "dws": 0.7091},
+            "MAC": {
+                "dws": 0.5913}
+        }
+        
+        curves = pd.read_excel(vul_curve_path,sheet_name=sheet_name,skiprows=11)
+        
+        dws = design_wind_speed.get(country_code, {}).get("dws", None)
+        scaling_factor = dws / 50 #shift design wind speed of all curves to 50 m/s
+
+        curves = curves.apply(lambda x: x * scaling_factor if pd.api.types.is_numeric_dtype(x) else x)
+        
+        curves = curves.set_index('Wind speed (m/s)')
+        
+    elif hazard_type == 'fl':
+        sheet_name = 'flooding_curves'    
+        
+        # load curves and maximum damages as separate inputs
+        curves = pd.read_excel(vul_curve_path,sheet_name=sheet_name,skiprows=11,index_col=[0])
+
+    maxdam = pd.read_excel(vul_curve_path,sheet_name=sheet_name,index_col=[0],header=[0,1]).iloc[:8]
+    #maxdam = maxdam.rename({'substation_point':'substation'},level=0,axis=1)        
+        
+    curves.columns = maxdam.columns
+    
     #transpose maxdam so its easier work with the dataframe
     maxdam = maxdam.T
     
@@ -104,28 +152,7 @@ def load_curves_maxdam(country_code,vul_curve_path,hazard_type):
 
     #interpolate the curves to fill missing values
     curves = curves.interpolate()
-    """
-    #load curves without GDP correction
-    if hazard_type == 'tc':
-        sheet_name = 'wind_curves'
-    
-    elif hazard_type == 'fl':
-        sheet_name = 'flooding_curves'
-    
-    # load curves and maximum damages as separate inputs
-    curves = pd.read_excel(vul_curve_path,sheet_name=sheet_name,skiprows=11,index_col=[0])
-    
-    maxdam = pd.read_excel(vul_curve_path,sheet_name=sheet_name,index_col=[0],header=[0,1]).iloc[:8]
-    maxdam = maxdam.rename({'substation_point':'substation'},level=0,axis=1)
-
-    curves.columns = maxdam.columns
-        
-    #transpose maxdam so its easier work with the dataframe
-    maxdam = maxdam.T
-
-    #interpolate the curves to fill missing values
-    curves = curves.interpolate()
-    
+       
     return curves,maxdam
     
     
