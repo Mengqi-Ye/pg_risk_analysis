@@ -1,0 +1,21 @@
+extract:   0%|          | 0/383 [00:00<?, ?it/s]extract:   0%|          | 1/383 [00:00<04:01,  1.58it/s]extract: 100%|██████████| 383/383 [00:00<00:00, 577.87it/s]
+extract:   0%|          | 0/282 [00:00<?, ?it/s]extract:   0%|          | 1/282 [00:01<05:20,  1.14s/it]extract:   2%|▏         | 5/282 [00:01<01:07,  4.11it/s]extract: 100%|██████████| 282/282 [00:01<00:00, 187.07it/s]
+extract:   0%|          | 0/48885 [00:00<?, ?it/s]extract:   0%|          | 1/48885 [00:00<3:10:51,  4.27it/s]extract:   5%|▌         | 2644/48885 [00:00<00:04, 10013.41it/s]extract:  11%|█         | 5330/48885 [00:00<00:02, 15926.13it/s]extract:  16%|█▋        | 7958/48885 [00:00<00:02, 19383.03it/s]extract:  22%|██▏       | 10541/48885 [00:00<00:01, 21464.93it/s]extract:  27%|██▋       | 13170/48885 [00:00<00:01, 22987.82it/s]extract:  32%|███▏      | 15848/48885 [00:00<00:01, 24163.95it/s]extract:  38%|███▊      | 18471/48885 [00:00<00:01, 24798.67it/s]extract:  43%|████▎     | 21083/48885 [00:01<00:01, 25200.64it/s]extract:  49%|████▊     | 23719/48885 [00:01<00:00, 25550.20it/s]extract:  54%|█████▍    | 26349/48885 [00:01<00:00, 25773.80it/s]extract:  59%|█████▉    | 28957/48885 [00:01<00:00, 22465.04it/s]extract:  65%|██████▍   | 31539/48885 [00:01<00:00, 23377.38it/s]extract:  70%|██████▉   | 34116/48885 [00:01<00:00, 24046.57it/s]extract:  75%|███████▌  | 36712/48885 [00:01<00:00, 24590.51it/s]extract:  80%|████████  | 39323/48885 [00:01<00:00, 25028.63it/s]extract:  86%|████████▌ | 41925/48885 [00:01<00:00, 25317.87it/s]extract:  91%|█████████ | 44521/48885 [00:01<00:00, 25504.49it/s]extract:  96%|█████████▋| 47113/48885 [00:02<00:00, 25626.84it/s]extract: 100%|██████████| 48885/48885 [00:02<00:00, 21978.61it/s]
+Traceback (most recent call last):
+  File "/scistor/ivm/mye500/projects/pg_risk_analysis/src/risk.py", line 488, in <module>
+    save_risk = risk_output(sys.argv[1],sys.argv[2],sys.argv[3]) #country_code,hazard_type,infra_type
+  File "/scistor/ivm/mye500/projects/pg_risk_analysis/src/risk.py", line 434, in risk_output
+    line_risk,plant_risk,substation_risk,tower_risk,pole_risk = country_analysis_osm(country_code,hazard_type)
+  File "/scistor/ivm/mye500/projects/pg_risk_analysis/src/risk.py", line 43, in country_analysis_osm
+    osm_damage_infra = assess_damage_osm(country_code,osm_power_infra,hazard_type)
+  File "/scistor/ivm/mye500/projects/pg_risk_analysis/src/damage.py", line 269, in assess_damage_osm
+    df_ds = open_storm_data(country_code)
+  File "/scistor/ivm/mye500/projects/pg_risk_analysis/src/hazard.py", line 141, in open_storm_data
+    WP = load_storm_data(climate_model,'WP',bbox)
+  File "/scistor/ivm/mye500/projects/pg_risk_analysis/src/hazard.py", line 52, in load_storm_data
+    ds = ds.rio.clip_box(minx=bbox[0], miny=bbox[1], maxx=bbox[2], maxy=bbox[3])
+  File "/scistor/ivm/mye500/miniconda3/envs/py310/lib/python3.10/site-packages/rioxarray/raster_dataset.py", line 293, in clip_box
+    self._obj[var]
+  File "/scistor/ivm/mye500/miniconda3/envs/py310/lib/python3.10/site-packages/rioxarray/raster_array.py", line 817, in clip_box
+    raise NoDataInBounds(
+rioxarray.exceptions.NoDataInBounds: No data found in bounds. Data variable: mean
