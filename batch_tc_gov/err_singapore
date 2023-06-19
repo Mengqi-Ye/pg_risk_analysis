@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "/scistor/ivm/mye500/projects/pg_risk_analysis/src/risk.py", line 517, in <module>
+    save_risk = risk_output(sys.argv[1],sys.argv[2],sys.argv[3]) #country_code,hazard_type,infra_type
+  File "/scistor/ivm/mye500/projects/pg_risk_analysis/src/risk.py", line 456, in risk_output
+    line_risk,plant_risk,substation_risk = country_analysis_pg(country_code,hazard_type)
+  File "/scistor/ivm/mye500/projects/pg_risk_analysis/src/risk.py", line 311, in country_analysis_pg
+    pg_damage_infra = assess_damage_pg(country_code,pg_power_infra,hazard_type)
+  File "/scistor/ivm/mye500/projects/pg_risk_analysis/src/damage.py", line 462, in assess_damage_pg
+    df_ds = open_storm_data(country_code)
+  File "/scistor/ivm/mye500/projects/pg_risk_analysis/src/hazard.py", line 141, in open_storm_data
+    WP = load_storm_data(climate_model,'WP',bbox)
+  File "/scistor/ivm/mye500/projects/pg_risk_analysis/src/hazard.py", line 52, in load_storm_data
+    ds = ds.rio.clip_box(minx=bbox[0], miny=bbox[1], maxx=bbox[2], maxy=bbox[3])
+  File "/scistor/ivm/mye500/miniconda3/envs/py310/lib/python3.10/site-packages/rioxarray/raster_dataset.py", line 293, in clip_box
+    self._obj[var]
+  File "/scistor/ivm/mye500/miniconda3/envs/py310/lib/python3.10/site-packages/rioxarray/raster_array.py", line 817, in clip_box
+    raise NoDataInBounds(
+rioxarray.exceptions.NoDataInBounds: No data found in bounds. Data variable: mean
