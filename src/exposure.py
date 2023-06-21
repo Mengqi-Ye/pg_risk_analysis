@@ -19,14 +19,12 @@ pd.options.mode.chained_assignment = None
 from rasterio.mask import mask
 from scipy import integrate
 
-
-#load_storm_data,open_storm_data,load_flood_data,open_flood_data,
-
 # load from other py files within pg_risk_analysis
 from utils import reproject,set_paths,buffer_assets,overlay_hazard_assets
 from extract import extract_osm_infrastructure
+from hazard import open_storm_data,open_flood_data
 
-gdal.SetConfigOption("OSM_CONFIG_FILE", os.path.join('..',"osmconf.ini"))
+gdal.SetConfigOption("OSM_CONFIG_FILE",os.path.join('/scistor/ivm/mye500/projects/pg_risk_analysis/osmconf.ini'))
 
 
 def save_exposure(country_code,hazard_type):
@@ -39,7 +37,7 @@ def save_exposure(country_code,hazard_type):
     if hazard_type=='tc':
         # read wind data
         climate_models = [''] #,'_CMCC-CM2-VHR4','_CNRM-CM6-1-HR','_EC-Earth3P-HR','_HadGEM3-GC31-HM'
-        df_ds = twn_wind #open_storm_data(country_code)!!!!!!!!!!!!!!!!!!!
+        df_ds = open_storm_data(country_code)
         
         # remove assets that will not have any damage
         osm_lines = osm_lines.loc[osm_lines.asset != 'cable'].reset_index(drop=True)
@@ -49,7 +47,7 @@ def save_exposure(country_code,hazard_type):
     elif hazard_type=='fl':
         # read flood data
         climate_models = ['historical'] #,'rcp8p5'
-        df_ds = twn_flood #open_flood_data(country_code)!!!!!!!!!!!!!!!!!!!
+        df_ds = open_flood_data(country_code)
                 
     for climate_model in climate_models:
         if hazard_type=='tc':
@@ -67,7 +65,7 @@ def save_exposure(country_code,hazard_type):
 
             df_hazard = df_ds[climate_model][[return_period,'geometry']]
             df_hazard = df_hazard[~df_hazard.eq(0).any(axis=1)]
-            print(df_hazard)
+            #print(df_hazard)
             overlay_lines = pd.DataFrame(overlay_hazard_assets(df_hazard,osm_lines).T,
                                          columns=['asset','hazard_point'])
 
@@ -125,7 +123,11 @@ def save_exposure(country_code,hazard_type):
 
             osm_exposure = pd.merge(hazard_counts, hazard_geometry, on='hazard_point')
 
-            osm_exposure.to_excel(os.path.join(output_path,exposure,f'{country_code}_osm_exposure_{hazard_type}_{return_period}.xlsx'))
+            osm_exposure.to_excel(os.path.join(output_path,'exposure',f'{country_code}_osm_exposure_{hazard_type}_{return_period}.xlsx'))
 
     return osm_exposure
 
+
+if __name__ == "__main__":
+    
+    osm_exposure = save_exposure(sys.argv[1],sys.argv[2]) #country_code,hazard_type
