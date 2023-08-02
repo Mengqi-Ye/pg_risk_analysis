@@ -14,7 +14,7 @@ It also provides Jupyter Notebooks to reproduce the figures and tables in Ye et 
 ## Python requirements
 The recommended option is to use a miniconda environment to work in for this project, relying on conda to handle some of the trickier library dependencies.
 ```
-# Create a conda environment for the project and install packages>
+# Create a conda environment for the project and install packages
 conda env create -f environment.yml
 conda activate py310
 ```
