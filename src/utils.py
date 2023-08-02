@@ -4,7 +4,7 @@ import pyproj
 import numpy as np
 from collections.abc import Iterable
 
-def set_paths(local=False): # set local=False if run on cluster
+def set_paths(local=True): # set local=False if run on cluster
 
     if local == True:
         data_path = os.path.join('C:\\','Data','pg_risk_analysis')
@@ -22,7 +22,6 @@ def set_paths(local=False): # set local=False if run on cluster
         fl_path = os.path.join(data_path,'GLOFRIS')
         osm_data_path = os.path.join(base_path,'country_osm')
         pg_data_path = os.path.join('/scistor/ivm/mye500/data/pg_risk_analysis','pg_data')
-        #vul_curve_path = os.path.join(data_path,'vulnerability_curves','input_vulnerability_data.xlsx')
         vul_curve_path = os.path.join('/scistor/ivm/mye500/data/pg_risk_analysis/vulnerability_curves','input_vulnerability_data.xlsx')
         output_path = os.path.join("/scistor/ivm/mye500/projects/pg_risk_analysis_output/output")
         ne_path = os.path.join(data_path,"natural_earth","ne_10m_admin_0_countries.shp")

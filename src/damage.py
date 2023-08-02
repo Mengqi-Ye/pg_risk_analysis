@@ -25,15 +25,19 @@ from utils import overlay_hazard_assets,set_paths,flatten
 
 
 def load_curves_maxdam(country_code,vul_curve_path,hazard_type):
-    """[summary]
+    """Load vulnerability curves and maximum damages for a specific country and hazard type.
 
     Args:
-        data_path ([type]): [description]
+        country_code (str): Country code for the desired country.
+        vul_curve_path (str): Path to the input vulnerability curves file.
+        hazard_type (str): Type of hazard ('tc' for tropical cyclone, 'fl' for coastal flooding).
 
     Returns:
-        [type]: [description]
+        tuple: A tuple containing two pandas DataFrames:
+               - curves: Vulnerability curves.
+               - maxdam: Maximum damages.
     """
-    
+
     # dictionary of GDP per capita ratio for each country
     gdp_ratio = {
         "BRN": {"ratio_usa": 0.5201},
@@ -58,7 +62,10 @@ def load_curves_maxdam(country_code,vul_curve_path,hazard_type):
     if hazard_type == 'tc':
         sheet_name = 'wind_curves'
         
-        # dictionary of design wind speeds (m/s) for each country
+        # load curves and maximum damages as separate inputs
+        curves = pd.read_excel(vul_curve_path,sheet_name=sheet_name,skiprows=11)
+        
+        # dictionary of design wind speeds for each country
         design_wind_speed = {
             "BRN": {"dws": 32},
             "KHM": {"dws": 32},
@@ -67,7 +74,7 @@ def load_curves_maxdam(country_code,vul_curve_path,hazard_type):
             "JPN": {"dws": 52},
             "LAO": {"dws": 32},
             "MYS": {"dws": 32},
-            "MNG": {"dws": 44},
+            "MNG": {"dws": 0},
             "MMR": {"dws": 39},
             "PRK": {"dws": 39},
             "PHL": {"dws": 52},
@@ -76,14 +83,12 @@ def load_curves_maxdam(country_code,vul_curve_path,hazard_type):
             "TWN": {"dws": 60},
             "THA": {"dws": 39},
             "VNM": {"dws": 44}}
-        
-        curves = pd.read_excel(vul_curve_path,sheet_name=sheet_name,skiprows=11)
-        
         dws = design_wind_speed.get(country_code, {}).get("dws", None)
-        scaling_factor = dws / 60 #shift design wind speed of all curves to 60 m/s
+        
+        # shift design wind speed of all curves to 60 m/s
+        scaling_factor = dws / 60
 
         curves = curves.apply(lambda x: x * scaling_factor if pd.api.types.is_numeric_dtype(x) else x)
-        
         curves = curves.set_index('Wind speed (m/s)')
         
     elif hazard_type == 'fl':
@@ -93,8 +98,6 @@ def load_curves_maxdam(country_code,vul_curve_path,hazard_type):
         curves = pd.read_excel(vul_curve_path,sheet_name=sheet_name,skiprows=11,index_col=[0])
 
     maxdam = pd.read_excel(vul_curve_path,sheet_name=sheet_name,index_col=[0],header=[0,1]).iloc[:8]
-    #maxdam = maxdam.rename({'substation_point':'substation'},level=0,axis=1)        
-        
     curves.columns = maxdam.columns
     
     #interpolate the curves to fill missing values
@@ -143,7 +146,7 @@ def get_damage_per_asset_per_rp(asset,df_ds,assets,curves,maxdam,return_period,c
     asset_geom = assets.iloc[asset[0]].geometry
 
     if asset_type in ['plant','substation','generator']:
-        #if plant,substation are points, do not calculate the area
+        # if plant,substation are points, do not calculate the area
         if pygeos.area(asset_geom) == 0:
             maxdam_asset = maxdam.loc[asset_type].MaxDam
             lowerdam_asset = maxdam.loc[asset_type].LowerDam
@@ -378,9 +381,9 @@ def assess_damage_osm(country_code,osm_power_infra,hazard_type): #NEW VERSION
                               desc='point damage calculation for {} {} ({})'.format(country_code,hazard_type,climate_model)):
                 for return_period in return_periods:
                     
-                    check_error = get_damage_per_asset_per_rp(asset,df_ds[climate_model],osm_points,curves,maxdam,return_period,country_code)
-                    with open(os.path.join(output_path,'get_damage_per_asset_per_rp_{}{}.pkl'.format(country_code,climate_model)), 'wb') as f:
-                        pickle.dump(check_error,f)
+                    # check_error = get_damage_per_asset_per_rp(asset,df_ds[climate_model],osm_points,curves,maxdam,return_period,country_code)
+                    # with open(os.path.join(output_path,'get_damage_per_asset_per_rp_{}_{}.pkl'.format(country_code,climate_model)), 'wb') as f:
+                    #     pickle.dump(check_error,f)
 
                     collect_point_damages.append(get_damage_per_asset_per_rp(asset,
                                                                             df_ds[climate_model],
@@ -397,11 +400,8 @@ def assess_damage_osm(country_code,osm_power_infra,hazard_type): #NEW VERSION
                 collect_point_damages = [[item for item in sublist if not isinstance(item, int)] for sublist in collect_point_damages]
                 collect_point_damages = [[item for item in sublist if len(item) == 6] for sublist in collect_point_damages]
 
-                with open(os.path.join(output_path,'collect_point_damages_{}{}.pkl'.format(country_code,climate_model)), 'wb') as f:
-                    pickle.dump(collect_point_damages,f)
-
-                print(results.head(10))
-                print(results.keys())
+                # with open(os.path.join(output_path,'collect_point_damages_{}_{}.pkl'.format(country_code,climate_model)), 'wb') as f:
+                #     pickle.dump(collect_point_damages,f)
 
                 results = pd.DataFrame([item for sublist in collect_point_damages
                                         for item in sublist],columns=['rp','asset','curve','meandam','lowerdam','upperdam'])
@@ -432,17 +432,7 @@ def assess_damage_osm(country_code,osm_power_infra,hazard_type): #NEW VERSION
 ##### ##### ##### ##### ##### ##### ##### #####  
 ##### ##### ##### GOV DAMAGE  ##### ##### ##### 
 ##### ##### ##### ##### ##### ##### ##### #####
-def assess_damage_pg(country_code,pg_infra,hazard_type):
-    """_summary_
-
-    Args:
-        country_code (_type_): _description_
-        pg_data_country (_type_): _description_
-
-    Returns:
-        _type_: _description_
-    """
-    
+def assess_damage_pg(country_code,pg_infra,hazard_type):    
     # set paths
     data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
 

@@ -55,7 +55,7 @@ def retrieve(osm_path,geoType,keyCol,**valConstraint):
     Function to extract specified geometry and keys/values from OpenStreetMap
     Arguments:
         *osm_path* : file path to the .osm.pbf file of the region 
-        for which we want to do the analysis.     
+            for which we want to do the analysis.     
         *geoType* : Type of Geometry to retrieve. e.g. lines, multipolygons, etc.
         *keyCol* : These keys will be returned as columns in the dataframe.
         ***valConstraint: A dictionary specifiying the value constraints.  
@@ -114,28 +114,8 @@ def power_polyline(osm_path):
     
     return df.reset_index(drop=True)
 
-def power_polygon(osm_path): # check with joel, something was wrong here with extracting substations
-    """
-    Function to extract energy polygons from OpenStreetMap  
-    Arguments:
-        *osm_path* : file path to the .osm.pbf file of the region 
-        for which we want to do the analysis.        
-    Returns:
-        *GeoDataFrame* : a geopandas GeoDataFrame with specified unique energy linestrings.
-    """
-    df = retrieve(osm_path,'multipolygons',['other_tags']) 
-    
-    df = df.loc[(df.other_tags.str.contains('power'))]   #keep rows containing power data         
-    df = df.reset_index(drop=True).rename(columns={'other_tags': 'asset'})     
-    
-    df['asset'].loc[df['asset'].str.contains('"power"=>"substation"', case=False)]  = 'substation' #specify row
-    df['asset'].loc[df['asset'].str.contains('"power"=>"plant"', case=False)] = 'plant' #specify row
-    
-    df = df.loc[(df.asset == 'substation') | (df.asset == 'plant')]
-            
-    return df.reset_index(drop=True) 
 
-def electricity(osm_path):
+def power_polygon(osm_path):
     """
     Function to extract building polygons from OpenStreetMap    
     Arguments:
@@ -144,39 +124,16 @@ def electricity(osm_path):
     Returns:
         *GeoDataFrame* : a geopandas GeoDataFrame with all unique building polygons.    
     """
-    df = retrieve(osm_path,'multipolygons',['power'])
-    
+    df = retrieve(osm_path,'multipolygons',['power','plant_source'])
     df = df.reset_index(drop=True).rename(columns={'power': 'asset'})
     
-    #df = df[df.asset!='generator']
     df['asset'].loc[df['asset'].str.contains('"power"=>"substation"', case=False)]  = 'substation' #specify row
-    df['asset'].loc[df['asset'].str.contains('"power"=>"plant"', case=False)] = 'plant' #specify row
-    
-    #print(df)  #check infra keys
-    
+    df['asset'].loc[df['asset'].str.contains('"power"=>"plant"', case=False)] = 'plant'
+        
     df = df.loc[(df.asset == 'substation') | (df.asset == 'plant')]
-    
+        
     return df.reset_index(drop=True)
 
-def retrieve_poly_subs(osm_path, w_list, b_list):
-    """
-    Function to extract electricity substation polygons from OpenStreetMap
-    Arguments:
-        *osm_path* : file path to the .osm.pbf file of the region
-        for which we want to do the analysis.
-        *w_list* :  white list of keywords to search in the other_tags columns
-        *b_list* :  black list of keywords of rows that should not be selected
-    Returns:
-        *GeoDataFrame* : a geopandas GeoDataFrame with specified unique substation.
-    """
-    df = retrieve(osm_path,'multipolygons',['other_tags'])
-    df = df[df.other_tags.str.contains('substation', case=False, na=False)]
-    #df = df.loc[(df.other_tags.str.contains('substation'))]
-    df = df[~df.other_tags.str.contains('|'.join(b_list))]
-    #df = df.reset_index(drop=True).rename(columns={'other_tags': 'asset'})
-    df['asset']  = 'substation' #specify row
-    #df = df.loc[(df.asset == 'substation')] #specify row
-    return df.reset_index(drop=True)
 
 def power_point(osm_path):
     """
@@ -185,29 +142,33 @@ def power_point(osm_path):
         *osm_path* : file path to the .osm.pbf file of the region 
         for which we want to do the analysis.        
     Returns:
-        *GeoDataFrame* : a geopandas GeoDataFrame with specified unique energy linestrings.
+        *GeoDataFrame* : a geopandas GeoDataFrame with specified unique energy points.
     """   
-    df = retrieve(osm_path,'points',['other_tags']) 
+    df = retrieve(osm_path,'points',['other_tags'])
     df = df.loc[(df.other_tags.str.contains('power'))]  #keep rows containing power data       
-    df = df.reset_index(drop=True).rename(columns={'other_tags': 'asset'})     
+    df = df.reset_index(drop=True).rename(columns={'other_tags': 'asset'})
         
     df['asset'].loc[df['asset'].str.contains('"power"=>"tower"', case=False)]  = 'power_tower' #specify row
     df['asset'].loc[df['asset'].str.contains('"power"=>"pole"', case=False)] = 'power_pole' #specify row
-    #df['asset'].loc[df['asset'].str.contains('"utility"=>"power"', case=False)] = 'power_tower' #specify row
     
     df = df.loc[(df.asset == 'power_tower') | (df.asset == 'power_pole')]
             
     return df.reset_index(drop=True)
 
+
 def extract_osm_infrastructure(country_code,osm_data_path):
-    """_summary_
+        """
+    Extract OSM (OpenStreetMap) infrastructure data for a specific country.
 
     Args:
-        country_code (_type_): _description_
-        osm_data_path (_type_): _description_
+        country_code (str): Country code for the desired country.
+        osm_data_path (str): Path to the OSM data.
 
     Returns:
-        _type_: _description_
+        tuple: A tuple containing three pandas DataFrames:
+            - osm_lines: OSM infrastructure lines data.
+            - osm_polygons: OSM infrastructure polygons data.
+            - osm_points: OSM infrastructure points data.
     """
     # set paths
     data_path,tc_path,fl_path,osm_data_path,pg_data_path,vul_curve_path,output_path,ne_path = set_paths()
@@ -221,7 +182,7 @@ def extract_osm_infrastructure(country_code,osm_data_path):
     
     # polygons
     osm_path = os.path.join(osm_data_path,'{}.osm.pbf'.format(country_code))
-    osm_polygons = electricity(osm_path)
+    osm_polygons = power_polygon(osm_path)
     osm_polygons['geometry'] = reproject(osm_polygons)
     
     # points
@@ -239,14 +200,17 @@ def extract_osm_infrastructure(country_code,osm_data_path):
 ##### ##### ##### ##### ##### ##### ##### ##### ##### 
 
 def extract_pg_infrastructure(country_code):
-    """_summary_
+    """
+    Extract the infrastructure data from the government power grid data (GOV)
+        for a specific country.
 
     Args:
-        country_code (_type_): _description_
-        pg_type (_type_): _description_
+        country_code (str): Country code for the desired country.
 
     Returns:
-        _type_: _description_
+        tuple: A tuple containing two pandas GeoDataFrames:
+            - pg_lines: GOV lines data.
+            - pg_points: GOV points data.
     """
 
     # set paths
