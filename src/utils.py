@@ -4,7 +4,7 @@ import pyproj
 import numpy as np
 from collections.abc import Iterable
 
-def set_paths(local=True): # set local=False if run on cluster
+def set_paths(local=False): # set local=False if run on cluster
 
     if local == True:
         data_path = os.path.join('C:\\','Data','pg_risk_analysis')
