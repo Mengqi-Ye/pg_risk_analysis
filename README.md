@@ -21,4 +21,4 @@ conda activate py310
 
 ## How to cite:
 If you use this repository in your work, please cite the corresponding paper:<br>
-Ye et al.
+Mengqi Ye, Philip Ward, Nadia Bloemendaal, Sadhana Nirandjan,  Elco Koks. 2024. Risk analysis of natural hazards to power grids in Southeast and East Asia.
