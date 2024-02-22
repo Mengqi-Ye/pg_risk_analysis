@@ -8,8 +8,8 @@ It also provides Jupyter Notebooks to reproduce the figures and tables in Ye et 
 - Coastal flood data: [Aqueduct Floods Hazard Maps (version 2)](http://wri-projects.s3.amazonaws.com/AqueductFloodTool/download/v2/index.html)
 - Electricity infrastructure data:
   - OpenStreetMap (OSM). Download the latest .osm.pbf file, then edit the osmconf.ini file to extract the specific assets.
-  - Government power grid maps. This compiled dataset of power plants, substations, and power lines is created based on power grid maps of each country in the study area from government reports and organizations (e.g., World Bank, World Resources Institute). It is open-access at https://zenodo.org/deposit/7550620#.
-- Vulnerability curves: The detailed information and description of how to process these curves from various sources are available at https://zenodo.org/deposit/7550620# and Ye et al..
+  - Government power grid maps. This compiled dataset of power plants, substations, and power lines is created based on power grid maps of each country in the study area from government reports and organizations (e.g., World Bank, World Resources Institute). It is open-access at [Electricity Infrastructure and Vulnerability Database for Power Gird Risk Assessment](https://zenodo.org/records/7550620).
+- Vulnerability curves: The detailed information and description of how to process these curves from various sources are available at [Electricity Infrastructure and Vulnerability Database for Power Gird Risk Assessment](https://zenodo.org/records/7550620).
 
 ## Python requirements
 The recommended option is to use a miniconda environment to work in for this project, relying on conda to handle some of the trickier library dependencies.
@@ -21,4 +21,7 @@ conda activate py310
 
 ## How to cite:
 If you use this repository in your work, please cite the corresponding paper:<br>
-Mengqi Ye, Philip Ward, Nadia Bloemendaal, Sadhana Nirandjan,  Elco Koks. 2024. Risk analysis of natural hazards to power grids in Southeast and East Asia.
+Ye, M., Ward, P., Bloemendaal, N., Nirandjan, S., & Koks, E. (2024). Risk analysis of natural hazards to power grids in Southeast and East Asia.
+
+If you would like to refer to the [Electricity Infrastructure and Vulnerability Database for Power Gird Risk Assessment](https://zenodo.org/records/7550620), please cite:<br>
+Ye, M., Ward, P., Bloemendaal, N., Nirandjan, S., & Koks, E. (2023). Electricity Infrastructure and Vulnerability Database for Power Gird Risk Assessment [Data set]. Zenodo. https://doi.org/10.5281/zenodo.7550620
