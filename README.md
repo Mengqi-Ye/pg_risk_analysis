@@ -1,7 +1,7 @@
 # Risk analysis of natural hazards to power grids in Southeast and East Asia
 This repository provides the code to perform the risk analysis of tropical cyclones and coastal floods to power grids in Southeast and East Asia on an asset level.
 
-It also provides Jupyter Notebooks to reproduce the figures and tables in Ye et al. (in review).
+It also provides Jupyter Notebooks to reproduce the figures and tables in [Ye et al (2024)](Ye, M., Ward, P.J., Bloemendaal, N. et al. Risk of Tropical Cyclones and Floods to Power Grids in Southeast and East Asia. Int J Disaster Risk Sci 15, 494–507 (2024). https://doi.org/10.1007/s13753-024-00573-7).
 
 ## Data requirements
 - Tropical cyclone wind speed data: [Synthetic Tropical cyclOne geneRation Model (STORM, version 3)](https://data.4tu.nl/articles/dataset/STORM_climate_change_tropical_cyclone_wind_speed_return_periods/14510817)
@@ -21,7 +21,7 @@ conda activate py310
 
 ## How to cite:
 If you use this repository in your work, please cite the corresponding paper:<br>
-Ye, M., Ward, P., Bloemendaal, N., Nirandjan, S., & Koks, E. (2024). Risk analysis of natural hazards to power grids in Southeast and East Asia.
+Ye, M., Ward, P.J., Bloemendaal, N. et al. Risk of Tropical Cyclones and Floods to Power Grids in Southeast and East Asia. International Journal of Disaster Risk Science 15, 494–507 (2024). https://doi.org/10.1007/s13753-024-00573-7
 
 If you would like to refer to the [Electricity Infrastructure and Vulnerability Database for Power Gird Risk Assessment](https://zenodo.org/records/7550620), please cite:<br>
 Ye, M., Ward, P., Bloemendaal, N., Nirandjan, S., & Koks, E. (2023). Electricity Infrastructure and Vulnerability Database for Power Gird Risk Assessment [Data set]. Zenodo. https://doi.org/10.5281/zenodo.7550620
